@@ -1,4 +1,6 @@
-assert = require('assert')
+'use strict'
+
+var assert = require('assert')
 
 module.exports = {
     'package should parse': function(t) {
@@ -12,9 +14,9 @@ module.exports = {
     },
 
     'package should export expected functions': function(t) {
-        var rpc = require('../index.js')
-        assert.equal(typeof rpc.createServer, 'function')
-        assert.equal(typeof rpc.connect, 'function')
+        var qrpc = require('../index.js')
+        assert.equal(typeof qrpc.createServer, 'function')
+        assert.equal(typeof qrpc.connect, 'function')
         t.done()
     }
 }
