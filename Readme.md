@@ -26,3 +26,8 @@ Summary
         })
 
         // => [ 'test ran!', { a: 1, b: 'test' } ]
+
+Todo
+----
+
+- support non-json (plaintext) payloads too (ie, bypass json coding)
