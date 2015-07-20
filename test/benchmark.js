@@ -4,7 +4,7 @@ if (process.argv[1] && process.argv[1].indexOf('unit') > 0) return
 cluster = require('cluster')
 qrpc = require('../index')
 
-isCluster = false
+isCluster = true
 if (!isCluster) {
     isMaster = true
     isWorker = true
@@ -81,7 +81,7 @@ process.exit()
 //process.stdout.write(err ? "X" : ".")
             nreplies += 1
             if (nreplies < n) {
-                if (nreplies % 10 === 0) setImmediate(oneCall)
+                if (nreplies % 40 === 0) setImmediate(oneCall)
                 else oneCall()
             }
             else {
@@ -97,8 +97,5 @@ process.exit()
     }
 }
 
-// 36k calls / sec single process parallel, 16.7k/s series
-// 64.7k calls / sec two processes parallel obj[5] arg, 17.6k/s series (71k/s single int arg)
-
-// 36k/s same-process (20k calls), 60k/s inter-process; 80k/s responses at 5+1x response rate
-// profile shows json parse as 60+% of time
+// 36k calls / sec parallel single process, 16.7k/s series
+// 64.7k calls / sec parallel two processes, 17.6k/s series (71k/s single int arg)
