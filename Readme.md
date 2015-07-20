@@ -14,7 +14,8 @@ Summary
         qrpc = require('qrpc')
         server = qrpc.createServer()
         server.addHandler('test', function(req, res, next) {
-            next(['test ran!', req.m])
+            err = null
+            next(err, ['test ran!', req.m])
         })
         server.listen(1337, function() {
             console.log("qrpc listening on port 1337")
@@ -28,7 +29,7 @@ Summary
             })
         })
 
-        // => [ 'test ran!', { a: 1, b: 'test' } ]
+        // => reply from server: [ 'test ran!', { a: 1, b: 'test' } ]
 
 
 Qrpc Server
