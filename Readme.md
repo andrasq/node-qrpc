@@ -32,6 +32,14 @@ Summary
         // => reply from server: [ 'test ran!', { a: 1, b: 'test' } ]
 
 
+Benchmark
+---------
+
+        $ npm test/benchmark.js
+        rpc: listening on 1337
+        parallel: 20000 calls in 311 ms
+        series: 20000 calls in 1123 ms
+
 Qrpc Server
 -----------
 
@@ -60,22 +68,38 @@ the Todo list below)
 
 ### qrpc.createServer( [options] )
 
-Create a new server
+Create a new server.  Returns the QrpcServer object.
+
+Options TBD, no options yet.
 
 ### server.addHandler( handlerName, handlerFunction(req, res, next) )
 
 Define the code that will handle calls of type _handlerName_
 
-The handler function receives 3 parameters
+A handler receives 3 parameters just like a middleware stack function: the
+call object (req), the response object (res), and a callback that can be used
+to return errors and/or data.
 
-### server.listen( port )
+The call object has a field .m that contains the object passed to the call, if
+any, and a field .id that is the unique caller-side id of the call.
 
-Start listening for calls.
+The response object has methods `write(data)` and `end([data])` that reply to
+the caller with the provided data.  End() will also close the call.  After the
+call is closed, no more replies can be sent.
+
+### server.listen( port, [whenListening] )
+
+Start listening for calls.  Incoming calls will invoke the appropritae
+handlers.
+
+If the whenListening callback is provided, it will be invoked once the server
+is listening for incoming calls with the net.socket the server is listening on.
+This way the socket can be configured and tuned by the application for e.g.
+remote disconnects and error handling.
 
 ### server.close( )
 
 Stop listening for calls.
-
 
         server = qrpc.createServer()
         server.addHandler('echo', function(req, res, next) {
@@ -93,18 +117,23 @@ request can result in more than response; qrpc sends all requests and
 responses over a single socket (multiplexes) and steers each response to its
 correct destination.
 
-### qrpc.connect( port, [host,] whenConnected )
+### qrpc.connect( port, [host,] whenConnected(socket) )
 
 Connect to the qrpc server listening on host:port (or 'localhost':port if host
-is not specified).  Returns the client object
+is not specified).  Returns the QrpcClient object.  Port may also be an options
+object to pass to `net.connect()` containing the required field `port`.
+
+If provided, the newly created net.socket will be passed to the whenConnected
+callback for socket configuration and tuning.
 
 Once connected, calls may be made with client.call()
 
 ### client.call( handlerName, [data,] [callback(err, replyData)] )
 
-Invoke the handler named _handlerName_ on the server, and present the server
-response via the callback.  Data is optional; if any data is specified, it is
-passed in the call to the server in `req.m`.
+Invoke the handler named _handlerName_, and return the server reply via the
+callback.  Handlers are registered on the server with addHandler().  Data is
+optional; if any data is specified, it is passed in the call to the server in
+`req.m`.
 
 Omitting the callback sends a one-way message to the server.  Any returned
 response will be ignored.
