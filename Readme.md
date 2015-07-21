@@ -66,7 +66,7 @@ Calls do not time out.  Write errors on the server side will not be noticed by
 the client.  Timeout-based error handling is up to the application.  (But see
 the Todo list below)
 
-### qrpc.createServer( [options] )
+### qrpc.createServer( [options][, callback(serverSocket)] )
 
 Create a new server.  Returns the QrpcServer object.
 
@@ -87,7 +87,7 @@ The response object has methods `write(data)` and `end([data])` that reply to
 the caller with the provided data.  End() will also close the call.  After the
 call is closed, no more replies can be sent.
 
-### server.listen( port, [whenListening] )
+### server.listen( port, [whenListening(err, socket)] )
 
 Start listening for calls.  Incoming calls will invoke the appropritae
 handlers.
@@ -113,7 +113,7 @@ Qrpc Client
 -----------
 
 The client makes calls to the server, and consumes the responses.  A single
-request can result in more than response; qrpc sends all requests and
+request can result in more than one response; qrpc sends all requests and
 responses over a single socket (multiplexes) and steers each response to its
 correct destination.
 
