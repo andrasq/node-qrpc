@@ -98,4 +98,4 @@ process.exit()
 }
 
 // 36k calls / sec parallel single process, 16.7k/s series
-// 64.7k calls / sec parallel two processes, 17.6k/s series (71k/s single int arg)
+// 65k calls / sec parallel two processes, 18k/s series (73k/s single int arg parallel, 20k/s series)
