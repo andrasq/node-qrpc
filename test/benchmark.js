@@ -4,8 +4,8 @@ if (process.argv[1] && process.argv[1].indexOf('unit') > 0) return
 cluster = require('cluster')
 qrpc = require('../index')
 
-isCluster = true
-if (!isCluster) {
+useCluster = true
+if (!useCluster) {
     isMaster = true
     isWorker = true
 }
@@ -28,6 +28,9 @@ console.log("AR: quit")
         res.end()
         server.close()
     })
+    server.addHandler('ping', function(req, res, next) {
+        res.end(null)
+    })
     server.addHandler('echo', function(req, res, next) {
         var data = req.m
         if (Array.isArray(data)) {
@@ -44,12 +47,11 @@ if (isWorker) {
         data = [1, 2, 3, 4, 5]
         data = {a:1, b:2, c:3, d:4, e:5} // 39k calls / sec
 
-        testParallel(20000, function(err, ret) {
+        console.log("test data:", data)
+        testParallel(100000, function(err, ret) {
             testSeries(20000, function(err, ret) {
                 client.call('quit')
                 client.close()
-// cluster master does not exit until worker does too? (even though disconnected)
-process.exit()
             })
         })
     })
@@ -57,7 +59,7 @@ process.exit()
     function testParallel( n, cb ) {
         ncalls = 0
         nreplies = 0
-        t1 = Date.now()
+        var t1 = Date.now()
         function handleEchoResponse(err, ret) {
             nreplies += 1
 // console.log("echo", ret)
@@ -71,12 +73,14 @@ process.exit()
             ncalls += 1
             client.call('echo', data, handleEchoResponse)
         }
+        // do not include the time to send the request in the runtime
+        t1 = Date.now()
     }
 
     function testSeries( n, cb ) {
         ncalls = 0
         nreplies = 0
-        t1 = Date.now()
+        var t1 = Date.now()
         function handleEchoResponse(err, ret) {
 //process.stdout.write(err ? "X" : ".")
             nreplies += 1
@@ -99,3 +103,5 @@ process.exit()
 
 // 36k calls / sec parallel single process, 16.7k/s series
 // 65k calls / sec parallel two processes, 18k/s series (73k/s single int arg parallel, 20k/s series)
+// server burst peak is about 300k calls / sec (single client, in parallel, w/o req time, tiny response, meas 100k)
+// server throughput is about 100k calls served / sec (multiple clients, in parallel, w/o req time) (cpu caching effects?)

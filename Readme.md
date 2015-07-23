@@ -35,10 +35,23 @@ Summary
 Benchmark
 ---------
 
+Qrpc can field bursts of calls at 200k calls per second (not including the
+time to build the call and append it to the send queue).  Aggregate throughput
+over multiple sockets is around 100k / sec.
+
+The parallel rate is peak server processing speed -- decode call, process
+them, encode and send the response.  The response is the input data.  With a
+minimal response, the peak burst rate is 300k / second.
+
+The series time is all-inclusive round-trip time: serialize the call, send it
+over the socket, process it, receive the response, and decode it; only then is
+the next call made.
+
         $ npm test/benchmark.js
         rpc: listening on 1337
-        parallel: 20000 calls in 311 ms
-        series: 20000 calls in 1123 ms
+        test data: { a: 1, b: 2, c: 3, d: 4, e: 5 }
+        parallel: 100000 calls in 453 ms
+        series: 20000 calls in 1093 ms
 
 Qrpc Server
 -----------
