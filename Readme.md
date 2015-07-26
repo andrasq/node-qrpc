@@ -130,7 +130,7 @@ request can result in more than one response; qrpc sends all requests and
 responses over a single socket (multiplexes) and steers each response to its
 correct destination.
 
-### qrpc.connect( port, [host,] whenConnected(socket) )
+### qrpc.connect( port, [host,] whenConnected(clientSocket) )
 
 Connect to the qrpc server listening on host:port (or 'localhost':port if host
 is not specified).  Returns the QrpcClient object.  Port may also be an options

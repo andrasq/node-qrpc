@@ -1,6 +1,5 @@
 'use strict'
 
-var assert = require('assert')
 var QrpcClient = require('../lib/qrpc-client.js')
 
 module.exports ={
@@ -14,13 +13,13 @@ module.exports ={
             var socket = new MockSocket()
             this.client.setSocket(socket)
             this.client.call('test', {a:1, b:2})
-            assert.equal(socket._written[0].slice(-1), "\n")
+            t.equal(socket._written[0].slice(-1), "\n")
             var msg = JSON.parse(socket._written[0])
-            assert(msg.id.match(/[0-9a-fA-F]{24}/))
+            t.assert(msg.id.match(/[0-9a-fA-F]{24}/))
             delete msg.id
-            assert.deepEqual(msg, {v: 1, n: 'test', m: {a:1, b:2}})
-            assert.equal(msg.v, 1)
-            assert.equal(msg.n, 'test')
+            t.deepEqual(msg, {v: 1, n: 'test', m: {a:1, b:2}})
+            t.equal(msg.v, 1)
+            t.equal(msg.n, 'test')
             t.done()
         },
 
@@ -28,7 +27,7 @@ module.exports ={
             var socket = new MockSocket()
             this.client.setSocket(socket)
             this.client.call('test', {a:2}, function(err, reply) {
-                assert.deepEqual(reply, {reply: 'ok'})
+                t.deepEqual(reply, {reply: 'ok'})
                 t.done()
             })
             var msg = JSON.parse(socket._written[0])
@@ -41,8 +40,8 @@ module.exports ={
             this.client.setSocket(socket)
             var errorObject = {message: 'oops', code: 123, stack: 'lines', other: 'yes'}
             this.client.call('test', {a:3}, function(err, reply) {
-                assert(err instanceof Error)
-                assert.deepEqual(err, errorObject)
+                t.assert(err instanceof Error)
+                t.deepEqual(err, errorObject)
                 t.done()
             })
             var msg = JSON.parse(socket._written[0])
@@ -56,14 +55,16 @@ module.exports ={
             client.setSocket(socket)
             var test1err, test2err
             client.call('test1', function(err, reply) {
-                assert(err instanceof Error)
+                t.assert(err instanceof Error)
                 test1err = err
             })
             client.call('test2', function(err, reply) {
                 // event listeners are invoked in the order added
                 test2err = err
-                assert(test1err instanceof Error)
-                assert(test2err instanceof Error)
+                t.assert(test1err instanceof Error)
+                t.equal(test1err.message, "socket error")
+                t.assert(test2err instanceof Error)
+                t.equal(test2err.message, "socket error")
                 t.done()
             })
             socket.emit('error', new Error("socket error"))
