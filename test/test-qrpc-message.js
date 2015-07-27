@@ -3,25 +3,20 @@
 
 var QrpcMessage = require('../lib/qrpc-message.js')
 
-var http_build_query = require('qhttp/http_build_query')
-var http_parse_query = require('qhttp/http_parse_query')
-
 module.exports = {
-    'v 1': {
+    'json format v=1': {
         setUp: function(done) {
-            this.message = new QrpcMessage({
-                v: 1,
-            })
+            this.message = new QrpcMessage({ v: 1 })
             done()
         },
 
-        'should encode as json': function(t) {
+        'should encode': function(t) {
             var str = this.message.encode({x: {a: 1, b: 2}})
             t.equal(str, '{"x":{"a":1,"b":2}}')
             t.done()
         },
 
-        'should decode json': function(t) {
+        'should decode': function(t) {
             var obj = this.message.decode('{"x":{"a":1,"b":2}}')
             t.deepEqual(obj, {x: {a: 1, b:2}})
             t.done()
@@ -34,23 +29,20 @@ module.exports = {
         },
     },
 
-    'v 2': {
+/***
+    'query string format v=2': {
         setUp: function(done) {
-            this.message = new QrpcMessage({
-                v: 2,
-                http_build_query: http_build_query,
-                http_parse_query: http_parse_query,
-            })
+            this.message = new QrpcMessage({ v: 2 })
             done()
         },
 
-        'should encode as http query string': function(t) {
+        'should encode': function(t) {
             var str = this.message.encode({x: {a: 1, b: 2}})
             t.equal(str, 'x[a]=1&x[b]=2')
             t.done()
         },
 
-        'should decode http query string': function(t) {
+        'should decode': function(t) {
             var obj = this.message.decode('x[a]=1&x[b]=2')
 // FIXME: decodes elements 'x[a]' and 'x[b]' in addition to 'x'
 //            t.deepEqual(obj, {x: {a: 1, b:2}})
@@ -62,5 +54,44 @@ module.exports = {
             t.assert(obj instanceof Error)
             t.done()
         },
+
+        'should use passed-in http encode/decode functions': function(t) {
+            // WRITEME
+            t.done()
+        },
+    },
+***/
+
+    'auto-detect format': {
+        setUp: function(done) {
+            this.message = new QrpcMessage({ v: -1 })
+            done()
+        },
+
+        'should encode as json': function(t) {
+            var str = this.message.encode({v:1, a:1})
+            t.equal(str, '{"v":1,"a":1}')
+            t.done()
+        },
+
+        'should decode json': function(t) {
+            var obj = this.message.decode('{"a":1,"b":2}')
+            t.deepEqual(obj, {a:1, b:2})
+            t.done()
+        },
+
+/***
+        'should encode query string': function(t) {
+            var str = this.message.encode({v:2, a:1})
+            t.equal(str, 'v=2&a=1')
+            t.done()
+        },
+
+        'should decode query string': function(t) {
+            var obj = this.message.decode('v=2&a=1&b=2')
+            t.deepEqual(obj, {v:2, a:1, b:2})
+            t.done()
+        },
+***/
     },
 }
