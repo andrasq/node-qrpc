@@ -53,6 +53,62 @@ the next call made.
         parallel: 100000 calls in 453 ms
         series: 20000 calls in 1093 ms
 
+
+Under The Hood
+--------------
+
+Qrpc is implemented as streaming message passing with call multiplexing.
+Each message is a newline terminated string sent to the server.  Messages
+are batched for efficiency, and arrive at the server in large chunks.  The
+server splits the stream, decodes each message, and invokes each handler.
+
+Messages are sent to named handlers; the handlers are registered with the
+server using the `addHandler` method.  Every handler takes the same
+arguments, a middleware stack-like `req, res, cb`:  the request bundle (the
+message itself), the response object, and a callback that can return a
+response and is used to return errors.
+
+The response object can be used to send replies back to the caller.  The
+`write` method sends a reply message and keeps the call open for more
+replies later.  The `end` method sends an optional final reply and closes
+the call.  End without an argument just closes the call by sending a special
+empty message back to the client.  Calling the handler callback `cb(err,
+data)` is equivalent to calling `end(data)`, except it will return the error
+too, if any.  A single call can result in more than once response;
+coordinating the responses is up to the application.
+
+Responses arrive at the caller in the same newline terminated text format,
+also in batches, over the same bidirectional connection.  The calling
+library splits the batches, decodes the responses, demultiplexes the replies
+to match them to their originating call, and invokes the call's callback
+function with the error and data from reply message.
+
+Calls are multiplexed, and may complete out of order.  Each message is
+tagged with a unique call id to identify which call's callback is to process
+the reply.
+
+The RPC service is implemented using the `QrpcServer` nad `QrpcClient`
+classes found in `./lib/`.  They communicate over any bidirectional stream
+that supports a `write()` method.  A customized RPC can be built over
+non-socket non-socket streams, which is how the unit tests work.
+
+### Message Format
+
+Qrpc requests and responses are both simple json objects:
+
+        {
+             v: 1,             // protocol version, 1: json bundle
+             id: id,           // unique id passed in to match calls to replies
+             n: name,          // call name string, in request only
+             m: message        // call payload, reply data
+             e: error          // returned error, in response only
+             s: status         // response status, one of
+                               //     ok (on write()),
+                               //     end (on end()),
+                               //     err (server error; means end)
+        }
+
+
 Qrpc Server
 -----------
 
@@ -166,26 +222,16 @@ after end" error to their callback.
         // produces "echo => null, { i: 123, t: 'test' }"
 
 
-Message Format
---------------
+Related Work
+------------
 
-Qrpc requests and responses are both simple json objects:
-
-        {
-             v: 1,             // protocol version, 1: this json bundle
-             id: id,           // unique id passed in to match calls to replies
-             n: name,          // call name string, in request only
-             m: message        // call payload
-             e: error          // returned error, in response only
-             s: status         // response status, one of
-                               //     ok (on write()),
-                               //     end (on end()),
-                               //     err (server error; means end)
-        }
-
+- [rpc-stream](https://npmjs.com/package/rpc-stream)
+- [dnode](https://npmjs.com/package/dnode)
 
 Todo
 ----
 
 - support non-json (plaintext) payloads too (ie, bypass json coding)
 - support call timeouts for more convenient error detection and cleanup
+- option to wrap the client into a "remote" object with callable methods
+  that are transparently proxied to the remote service
