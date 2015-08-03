@@ -227,6 +227,8 @@ Related Work
 
 - [rpc-stream](https://npmjs.com/package/rpc-stream)
 - [dnode](https://npmjs.com/package/dnode)
+- [node-fast](https://github.com/mcavage/node-fast)
+        
 
 Todo
 ----
