@@ -20,30 +20,49 @@ module.exports ={
             },
 
             'should return error if no port passed': function(t) {
+                // WRITEME
                 t.done()
             },
 
             'should return error if no server set': function(t) {
+                // WRITEME
                 t.done()
             },
 
             'should return error if already listening': function(t) {
+                // WRITEME
                 t.done()
             },
         },
 
         'should call server.listen': function(t) {
+            // WRITEME
             t.done()
         },
     },
 
     'close method': {
         'should call server.close if listening': function(t) {
+            // WRITEME
             t.done()
         },
     },
 
     'addHandler method': {
+        'should accept name and function': function(t) {
+            t.equal(this.server.handlers['test1'], undefined)
+            var fn = function(){}
+            this.server.addHandler('test1', fn)
+            t.equal(this.server.handlers['test1'], fn)
+            t.done()
+        },
+
+        'should throw error if not a function': function(t) {
+            try { this.server.addHandler('test', 1); t.fail() }
+            catch (err) { t.ok(true) }
+            t.done()
+        },
+
         'should consume newline terminated JSON messages': function(t) {
             this.server.addHandler('test', function(req, res, next) {
                 assert.deepEqual(req.m, {a:1, b:2})

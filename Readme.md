@@ -95,8 +95,7 @@ non-socket non-socket streams, which is how the unit tests work.
 The way `qrpc` builds an rpc service on top of net sockets is:
 
         // create qrpc server
-        QrpcServer = require('qrpc/lib/qrpc-server')
-        server = new QrpcServer()
+        server = new qrpc.QrpcServer()
         netServer = net.createServer(function(socket) {
             server.setServer(netServer)
             server.setSocket(socket)
@@ -106,8 +105,7 @@ The way `qrpc` builds an rpc service on top of net sockets is:
 
 
         // create qrpc client to talk to the server
-        QrpcClient = require('qrpc/lib/qrpc-client')
-        client = new QrpcClient()
+        client = new qrpc.QrpcClient()
         client.setSocket(net.connect(1337, 'localhost'))
         return client
 
@@ -154,7 +152,7 @@ Calls do not time out.  Write errors on the server side will not be noticed by
 the client.  Timeout-based error handling is up to the application.  (But see
 the Todo list below)
 
-### qrpc.createServer( [options][, callback(serverSocket)] )
+### server = qrpc.createServer( [options][, callback(serverSocket)] )
 
 Create a new server.  Returns the QrpcServer object.
 
@@ -205,7 +203,7 @@ request can result in more than one response; qrpc sends all requests and
 responses over a single socket (multiplexes) and steers each response to its
 correct destination.
 
-### qrpc.connect( port, [host,] whenConnected(clientSocket) )
+### client = qrpc.connect( port, [host,] whenConnected(clientSocket) )
 
 Connect to the qrpc server listening on host:port (or 'localhost':port if host
 is not specified).  Returns the QrpcClient object.  Port may also be an options
@@ -244,9 +242,11 @@ after end" error to their callback.
 Related Work
 ------------
 
-- [rpc-stream](https://npmjs.com/package/rpc-stream)
+- [rpc-stream](https://npmjs.com/package/rpc-stream) - 10k-40k calls / sec
+- [node-fast](https://github.com/mcavage/node-fast) - 12k calls / sec
 - [dnode](https://npmjs.com/package/dnode)
-- [node-fast](https://github.com/mcavage/node-fast)
+- X [mrpc](https://www.npmjs.com/package/mrpc) - npm install failed (C++ compile errors)
+- X [kamote](https://www.npmjs.com/package/kamote) - hangs on concurrent calls (v0.0.2)
         
 
 Todo

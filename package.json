@@ -1,6 +1,6 @@
 {
   "name": "qrpc",
-  "version": "0.5.6",
+  "version": "0.6.0",
   "description": "quicker nodejs remote procedure call",
   "main": "index.js",
   "author": "Andras",
