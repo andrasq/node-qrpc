@@ -92,22 +92,20 @@ They communicate over any bidirectional EventEmitter
 stream that supports a `write()` method.  A customized RPC can be built over
 non-socket non-socket streams, which is how the unit tests work.
 
-The way `qrpc` builds an rpc service on top of net sockets is:
+To build an rpc service on top of net sockets the way `qrpc` does:
 
         // create qrpc server
         server = new qrpc.QrpcServer()
         netServer = net.createServer(function(socket) {
-            server.setServer(netServer)
-            server.setSocket(socket)
+            server.setSource(socket, socket)
         })
-        netServer.listen(1337)
-        return server
+        server.setListenFunc(function(port, cb){ netServer.listen(port, cb) })
+        server.setCloseFunc(function(){ netServer.close() })
 
 
         // create qrpc client to talk to the server
         client = new qrpc.QrpcClient()
         client.setSocket(net.connect(1337, 'localhost'))
-        return client
 
 ### Message Format
 
