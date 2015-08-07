@@ -246,8 +246,8 @@ Qrpc requests and responses are both simple json objects:
 Related Work
 ------------
 
-- qrpc - 125-220k calls / sec
-- [rpc-stream](https://npmjs.com/package/rpc-stream) - 10-40k calls / sec
+- qrpc - 60k calls / sec
+- [rpc-stream](https://npmjs.com/package/rpc-stream) - 16k calls / sec
 - [fast](https://npmjs.com/package/fast) - 12k calls / sec
 - [dnode](https://npmjs.com/package/dnode) - 12k calls / sec
 - X [mrpc](https://www.npmjs.com/package/mrpc) - npm install failed (C++ compile errors)

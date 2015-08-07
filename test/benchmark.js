@@ -48,7 +48,7 @@ if (isWorker) {
         data = {a:1, b:2, c:3, d:4, e:5} // 39k calls / sec
 
         console.log("test data:", data, process.memoryUsage())
-        testParallel(100000, function(err, ret) {
+        testParallel(50000, function(err, ret) {
             testSeries(20000, function(err, ret) {
                 client.call('quit')
                 client.close()
@@ -58,7 +58,6 @@ if (isWorker) {
     })
 
     function testParallel( n, cb ) {
-        ncalls = 0
         nreplies = 0
         var t1 = Date.now()
         function handleEchoResponse(err, ret) {
@@ -66,16 +65,13 @@ if (isWorker) {
 // console.log("echo", ret)
 // process.stdout.write(".")
             if (nreplies === n) {
-                console.log("parallel: %d calls in %d ms", ncalls, Date.now() - t1)
+                console.log("parallel: %d calls in %d ms", n, Date.now() - t1)
                 cb()
             }
         }
         for (i=0; i<n; i++) {
-            ncalls += 1
             client.call('echo', data, handleEchoResponse)
         }
-        // do not include the time to send the request in the runtime
-        t1 = Date.now()
     }
 
     function testSeries( n, cb ) {
