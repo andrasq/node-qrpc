@@ -82,11 +82,15 @@ Calls do not time out.  Write errors on the server side will not be noticed by
 the client.  Timeout-based error handling is up to the application.  (But see
 the Todo list below)
 
-### server = qrpc.createServer( [options][, callback(serverSocket)] )
+### server = qrpc.createServer( [options][, callback(socket)] )
 
 Create a new server.  Returns the QrpcServer object.
 
 Options TBD, no options yet.
+
+The callback, if specified, will be invoked on every connection to the rpc
+server with the connected socket.  This makes it possible for the server to
+tune the socket settings.
 
 ### server.addHandler( handlerName, handlerFunction(req, res, next) )
 
