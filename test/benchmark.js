@@ -20,11 +20,11 @@ else {
 
 if (isMaster) {
     server = qrpc.createServer()
-    if (1) server.listen(1337, function() {
+    server.listen(1337, function() {
         console.log("rpc: listening on 1337")
     })
     server.addHandler('quit', function(req, res, next) {
-console.log("AR: quit")
+        console.log("server quit", process.memoryUsage())
         res.end()
         server.close()
     })
@@ -47,11 +47,12 @@ if (isWorker) {
         data = [1, 2, 3, 4, 5]
         data = {a:1, b:2, c:3, d:4, e:5} // 39k calls / sec
 
-        console.log("test data:", data)
+        console.log("test data:", data, process.memoryUsage())
         testParallel(100000, function(err, ret) {
             testSeries(20000, function(err, ret) {
                 client.call('quit')
                 client.close()
+                console.log("client done", process.memoryUsage())
             })
         })
     })

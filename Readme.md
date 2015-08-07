@@ -173,15 +173,13 @@ The response object has methods `write(data)` and `end([data])` that reply to
 the caller with the provided data.  End() will also close the call.  After the
 call is closed, no more replies can be sent.
 
-### server.listen( port, [whenListening(err, socket)] )
+### server.listen( port, [whenListening()] )
 
 Start listening for calls.  Incoming calls will invoke the appropritae
 handlers.
 
 If the whenListening callback is provided, it will be invoked once the server
-is listening for incoming calls with the net.socket the server is listening on.
-This way the socket can be configured and tuned by the application for e.g.
-remote disconnects and error handling.
+is listening for incoming calls.
 
 ### server.close( )
 
@@ -256,4 +254,3 @@ Todo
 - support call timeouts for more convenient error detection and cleanup
 - option to wrap the client into a "remote" object with callable methods
   that are transparently proxied to the remote service
-- expose methods to hook into the server and socket, not expect server and socket objects

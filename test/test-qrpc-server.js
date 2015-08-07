@@ -1,13 +1,11 @@
 'use strict'
 
-var assert = require('assert')
 var QrpcServer = require('../lib/qrpc-server.js')
 
 module.exports ={
     'beforeEach': function(done) {
         this.server = new QrpcServer()
         this.socket = new MockSocket()
-        this.server.setSocket(this.socket)
         done()
     },
 
@@ -20,11 +18,6 @@ module.exports ={
             },
 
             'should return error if no port passed': function(t) {
-                // WRITEME
-                t.done()
-            },
-
-            'should return error if no server set': function(t) {
                 // WRITEME
                 t.done()
             },
@@ -64,12 +57,13 @@ module.exports ={
         },
 
         'should consume newline terminated JSON messages': function(t) {
+            t.expect(1)
             this.server.addHandler('test', function(req, res, next) {
-                assert.deepEqual(req.m, {a:1, b:2})
+                t.deepEqual(req.m, {a:1, b:2})
                 t.done()
             })
             var msg = JSON.stringify({v: 1, id: 1, n: 'test', m: {a:1, b:2}}) + "\n"
-            this.socket.emit('data', msg)
+            this.server.onData('', msg)
         },
     }
 }
