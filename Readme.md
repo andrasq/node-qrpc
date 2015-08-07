@@ -3,25 +3,27 @@ Qrpc
 
 Qrpc is a very fast remote procedure call package.
 
-This is still an early version of the code:  it is fully functional and it is
-fast, but it is very lightly tested, is still subject to change, and needs
-unit tests.
+This is beta quality code:  it is fully functional and it is fast, but it is
+very lightly tested, is still subject to change, and needs unit tests.
 
+For familiarity, the interface is the same `createSever` / `listen` / `connect`
+that the node net and http servers use.  The implementation classes allow rpc
+over pretty much anything that's readable / writable.
 
 Summary
 -------
 
-        qrpc = require('qrpc')
-        server = qrpc.createServer()
+        var qrpc = require('qrpc')
+        var server = qrpc.createServer()
         server.addHandler('test', function(req, res, next) {
-            err = null
+            var err = null
             next(err, ['test ran!', req.m])
         })
         server.listen(1337, function() {
             console.log("qrpc listening on port 1337")
         })
 
-        client = qrpc.connect(1337, function() {
+        var client = qrpc.connect(1337, function() {
             client.call('test', {a: 1, b: 'test'}, function(err, ret) {
                 console.log("reply from server:", ret)
                 server.close()
@@ -52,76 +54,6 @@ the next call made.
         test data: { a: 1, b: 2, c: 3, d: 4, e: 5 }
         parallel: 100000 calls in 453 ms
         series: 20000 calls in 1093 ms
-
-
-Under The Hood
---------------
-
-Qrpc is implemented as streaming message passing with call multiplexing.
-Each message is a newline terminated string sent to the server.  Messages
-are batched for efficiency, and arrive at the server in large chunks.  The
-server splits the stream, decodes each message, and invokes each handler.
-
-Messages are sent to named handlers; the handlers are registered with the
-server using the `addHandler` method.  Every handler takes the same
-arguments, a middleware stack-like `req, res, cb`:  the request bundle (the
-message itself), the response object, and a callback that can return a
-response and is used to return errors.
-
-The response object can be used to send replies back to the caller.  The
-`write` method sends a reply message and keeps the call open for more
-replies later.  The `end` method sends an optional final reply and closes
-the call.  End without an argument just closes the call by sending a special
-empty message back to the client.  Calling the handler callback `cb(err,
-data)` is equivalent to calling `end(data)`, except it will return the error
-too, if any.  A single call can result in more than once response;
-coordinating the responses is up to the application.
-
-Responses arrive at the caller in the same newline terminated text format,
-also in batches, over the same bidirectional connection.  The calling
-library splits the batches, decodes the responses, demultiplexes the replies
-to match them to their originating call, and invokes the call's callback
-function with the error and data from reply message.
-
-Calls are multiplexed, and may complete out of order.  Each message is
-tagged with a unique call id to identify which call's callback is to process
-the reply.
-
-The RPC service is implemented using the `QrpcServer` and `QrpcClient` classes.
-They communicate over any bidirectional EventEmitter
-stream that supports a `write()` method.  A customized RPC can be built over
-non-socket non-socket streams, which is how the unit tests work.
-
-To build an rpc service on top of net sockets the way `qrpc` does:
-
-        // create qrpc server
-        server = new qrpc.QrpcServer()
-        netServer = net.createServer(function(socket) {
-            server.setSource(socket, socket)
-        })
-        server.setListenFunc(function(port, cb){ netServer.listen(port, cb) })
-        server.setCloseFunc(function(){ netServer.close() })
-
-
-        // create qrpc client to talk to the server
-        client = new qrpc.QrpcClient()
-        client.setSocket(net.connect(1337, 'localhost'))
-
-### Message Format
-
-Qrpc requests and responses are both simple json objects:
-
-        {
-             v: 1,             // protocol version, 1: json bundle
-             id: id,           // unique id passed in to match calls to replies
-             n: name,          // call name string, in request only
-             m: message        // call payload, reply data
-             e: error          // returned error, in response only
-             s: status         // response status, one of
-                               //     ok (on write()),
-                               //     end (on end()),
-                               //     err (server error; means end)
-        }
 
 
 Qrpc Server
@@ -183,7 +115,7 @@ is listening for incoming calls.
 
 Stop listening for calls.
 
-        server = qrpc.createServer()
+        var server = qrpc.createServer()
         server.addHandler('echo', function(req, res, next) {
             // echo server, return our arguments
             next(null, req.m)
@@ -217,8 +149,8 @@ callback.  Handlers are registered on the server with addHandler().  Data is
 optional; if any data is specified, it is passed in the call to the server in
 `req.m`.
 
-Omitting the callback sends a one-way message to the server.  Any returned
-response will be ignored.
+Omitting the callback sends a one-way message to the server.  Any response
+received from the server will be discarded.
 
 ### client.close( )
 
@@ -235,12 +167,85 @@ after end" error to their callback.
         // produces "echo => null, { i: 123, t: 'test' }"
 
 
+Under The Hood
+--------------
+
+Qrpc is implemented as streaming message passing with call multiplexing.
+Each message is a newline terminated string sent to the server.  Messages
+are batched for efficiency, and arrive at the server in large chunks.  The
+server splits the stream, decodes each message, and invokes each handler.
+
+Messages are sent to named handlers; the handlers are registered with the
+server using the `addHandler` method.  Every handler takes the same
+arguments, a middleware stack-like `req, res, cb`:  the request bundle (the
+message itself), the response object, and a callback that can return a
+response and is used to return errors.
+
+The response object can be used to send replies back to the caller.  The
+`write` method sends a reply message and keeps the call open for more
+replies later.  The `end` method sends an optional final reply and closes
+the call.  End without an argument just closes the call by sending a special
+empty message back to the client.  Calling the handler callback `cb(err,
+data)` is equivalent to calling `end(data)`, except it will return the error
+too, if any.  A single call can result in more than once response;
+coordinating the responses is up to the application.
+
+Responses arrive at the caller in the same newline terminated text format,
+also in batches, over the same bidirectional connection.  The calling
+library splits the batches, decodes the responses, demultiplexes the replies
+to match them to their originating call, and invokes the call's callback
+function with the error and data from reply message.
+
+Calls are multiplexed, and may complete out of order.  Each message is
+tagged with a unique call id to identify which call's callback is to process
+the reply.
+
+The RPC service is implemented using the `QrpcServer` and `QrpcClient` classes.
+They communicate over any bidirectional EventEmitter
+stream that supports a `write()` method.  A customized RPC can be built over
+non-socket non-socket streams, which is how the unit tests work.
+
+To build an rpc service on top of net sockets the way `qrpc` does:
+
+        // create qrpc server
+        var server = new qrpc.QrpcServer()
+        var netServer = net.createServer(function(socket) {
+            // have the server read rpc calls from the first arg
+            // and write responses to the second arg
+            server.setSource(socket, socket)
+        })
+        server.setListenFunc(function(port, cb){ netServer.listen(port, cb) })
+        server.setCloseFunc(function(){ netServer.close() })
+
+
+        // create qrpc client to talk to the server
+        var client = new qrpc.QrpcClient()
+        client.setSocket(net.connect(1337, 'localhost'))
+
+### Message Format
+
+Qrpc requests and responses are both simple json objects:
+
+        {
+             v: 1,             // protocol version, 1: json bundle
+             id: id,           // unique id passed in to match calls to replies
+             n: name,          // call name string, in request only
+             m: message        // call payload, reply data
+             e: error          // returned error, in response only
+             s: status         // response status, one of
+                               //     ok (on write()),
+                               //     end (on end()),
+                               //     err (server error; means end)
+        }
+
+
 Related Work
 ------------
 
-- [rpc-stream](https://npmjs.com/package/rpc-stream) - 10k-40k calls / sec
-- [node-fast](https://github.com/mcavage/node-fast) - 12k calls / sec
-- [dnode](https://npmjs.com/package/dnode)
+- qrpc - 125-220k calls / sec
+- [rpc-stream](https://npmjs.com/package/rpc-stream) - 10-40k calls / sec
+- [fast](https://npmjs.com/package/fast) - 12k calls / sec
+- [dnode](https://npmjs.com/package/dnode) - 12k calls / sec
 - X [mrpc](https://www.npmjs.com/package/mrpc) - npm install failed (C++ compile errors)
 - X [kamote](https://www.npmjs.com/package/kamote) - hangs on concurrent calls (v0.0.2)
         
