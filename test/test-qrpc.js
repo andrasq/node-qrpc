@@ -23,7 +23,7 @@ module.exports = {
         'should return a QrpcServer having the expected methods': function(t) {
             var server = qrpc.createServer()
             assert(server instanceof QrpcServer)
-            var expectedMethods = ['listen', 'addHandler', 'close']
+            var expectedMethods = ['listen', 'addHandler', 'close', 'setSource']
             for (var i in expectedMethods) {
                 assert.equal(typeof this.server[expectedMethods[i]], 'function')
             }
@@ -40,7 +40,7 @@ module.exports = {
         'should return a QrpcClient having the expected methods': function(t) {
             var client = qrpc.connect(80, 'localhost')
             assert(client instanceof QrpcClient)
-            var expectedMethods = ['call', 'close', 'setSocket']
+            var expectedMethods = ['call', 'close', 'setTarget']
             for (var i in expectedMethods) {
                 assert.equal(typeof this.client[expectedMethods[i]], 'function')
             }

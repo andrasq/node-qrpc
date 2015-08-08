@@ -230,7 +230,8 @@ To build an rpc service on top of net sockets the way `qrpc` does:
 
         // create qrpc client to talk to the server
         var client = new qrpc.QrpcClient()
-        client.setSocket(net.connect(1337, 'localhost'))
+        var socket = net.connect(1337, 'localhost')
+        client.setTarget(socket, socket)
 
 ### Message Format
 
@@ -238,7 +239,7 @@ Qrpc requests and responses are both simple json objects:
 
         {
              v: 1,             // protocol version, 1: json bundle
-             id: id,           // unique id passed in to match calls to replies
+             id: id,           // unique message id to match calls to replies
              n: name,          // call name string, in request only
              m: message        // call payload, reply data
              e: error          // returned error, in response only

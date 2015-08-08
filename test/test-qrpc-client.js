@@ -11,7 +11,7 @@ module.exports ={
     'call method': {
         'should write newline terminated v1 JSON message to socket': function(t) {
             var socket = new MockSocket()
-            this.client.setSocket(socket)
+            this.client.setTarget(socket, socket)
             this.client.call('test', {a:1, b:2})
             t.equal(socket._written[0].slice(-1), "\n")
             var msg = JSON.parse(socket._written[0])
@@ -25,7 +25,7 @@ module.exports ={
 
         'should invoke callback on response': function(t) {
             var socket = new MockSocket()
-            this.client.setSocket(socket)
+            this.client.setTarget(socket, socket)
             this.client.call('test', {a:2}, function(err, reply) {
                 t.deepEqual(reply, {reply: 'ok'})
                 t.done()
@@ -37,7 +37,7 @@ module.exports ={
 
         'should return Error on error response': function(t) {
             var socket = new MockSocket()
-            this.client.setSocket(socket)
+            this.client.setTarget(socket, socket)
             var errorObject = {message: 'oops', code: 123, stack: 'lines', other: 'yes'}
             this.client.call('test', {a:3}, function(err, reply) {
                 t.assert(err instanceof Error)
@@ -52,7 +52,7 @@ module.exports ={
         'should return Error to all calls on socket error': function(t) {
             var client = new QrpcClient()
             var socket = new MockSocket()
-            client.setSocket(socket)
+            client.setTarget(socket, socket)
             var test1err, test2err
             client.call('test1', function(err, reply) {
                 t.assert(err instanceof Error)
