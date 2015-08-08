@@ -41,15 +41,21 @@ if (isMaster) {
     })
 }
 
+var data = 1
+var data = [1, 2, 3, 4, 5]
+var data = {a:1, b:2, c:3, d:4, e:5}
+
 if (isWorker) {
     var client = qrpc.connect({port: 1337}, function() {
-        data = 1 // 43k calls / sec
-        data = [1, 2, 3, 4, 5]
-        data = {a:1, b:2, c:3, d:4, e:5} // 39k calls / sec
-
-        console.log("test data:", data, process.memoryUsage())
-        testParallel(50000, function(err, ret) {
-            testSeries(20000, function(err, ret) {
+        console.log("echo data:", data, process.memoryUsage())
+        var t1 = Date.now()
+        var n = 50000
+        testParallel(n, data, function(err, ret) {
+            console.log("parallel: %d calls in %d ms", n, Date.now() - t1)
+            t1 = Date.now()
+            n = 20000
+            testSeries(client, n, data, function(err, ret) {
+                console.log("series: %d calls in %d ms", n, Date.now() - t1)
                 client.call('quit')
                 client.close()
                 console.log("client done", process.memoryUsage())
@@ -57,44 +63,25 @@ if (isWorker) {
         })
     })
 
-    function testParallel( n, cb ) {
-        nreplies = 0
-        var t1 = Date.now()
+    function testParallel( n, data, cb ) {
+        ndone = 0
         function handleEchoResponse(err, ret) {
-            nreplies += 1
-// console.log("echo", ret)
-// process.stdout.write(".")
-            if (nreplies === n) {
-                console.log("parallel: %d calls in %d ms", n, Date.now() - t1)
-                cb()
-            }
+            if (++ndone === n) return cb()
         }
         for (i=0; i<n; i++) {
             client.call('echo', data, handleEchoResponse)
         }
     }
 
-    function testSeries( n, cb ) {
-        ncalls = 0
-        nreplies = 0
-        var t1 = Date.now()
-        function handleEchoResponse(err, ret) {
-//process.stdout.write(err ? "X" : ".")
-            nreplies += 1
-            if (nreplies < n) {
-                if (nreplies % 40 === 0) setImmediate(oneCall)
-                else oneCall()
-            }
-            else {
-                console.log("series: %d calls in %d ms", n, Date.now() - t1)
-                cb()
-            }
-        }
-        function oneCall() {
-            ncalls += 1
-            client.call('echo', data, handleEchoResponse)
-        }
-        oneCall()
+    function testSeries( client, n, data, cb ) {
+        (function makeCall() {
+            client.call('echo', data, function(err, ret) {
+                if (err) return cb(err)
+                if (--n <= 0) return cb();
+                else if (n % 40 === 0) setImmediate(makeCall)
+                else makeCall()
+            })
+        })()
     }
 }
 

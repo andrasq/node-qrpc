@@ -34,26 +34,32 @@ Summary
         // => reply from server: [ 'test ran!', { a: 1, b: 'test' } ]
 
 
+Installation
+------------
+
+        npm install qrpc
+        npm test qrpc
+
 Benchmark
 ---------
 
-Qrpc can field bursts of calls at 200k calls per second (not including the
-time to build the call and append it to the send queue).  Aggregate throughput
-over multiple sockets is around 100k / sec.
-
-The parallel rate is peak server processing speed -- decode call, process
-them, encode and send the response.  The response is the input data.  With a
-minimal response, the peak burst rate is 300k / second.
-
-The series time is all-inclusive round-trip time: serialize the call, send it
-over the socket, process it, receive the response, and decode it; only then is
-the next call made.
+Qrpc can field bursts of calls at over 120k calls per second (not including the
+time to build the call and append it to the send queue).  Full end-to-end
+throughput measured at the client is around 60k calls / second.
 
         $ npm test/benchmark.js
         rpc: listening on 1337
-        test data: { a: 1, b: 2, c: 3, d: 4, e: 5 }
-        parallel: 100000 calls in 453 ms
-        series: 20000 calls in 1093 ms
+        echo data: { a: 1, b: 2, c: 3, d: 4, e: 5 }
+        parallel: 50000 calls in 829 ms
+        series: 20000 calls in 1127 ms
+
+The parallel rate is peak server processing speed -- the rpc server decodes the
+calls, process them, and encodes and send the response.  The times shown above
+include the client-side formatting and sending of the rpc messages; the time to
+process the 50000 calls (reading request to writing response) is 240 ms.
+
+The series time is all-inclusive back-to-back round-trip time; each call is
+made only after the previous response has been received.
 
 
 Qrpc Server
@@ -86,11 +92,11 @@ the Todo list below)
 
 Create a new server.  Returns the QrpcServer object.
 
-Options TBD, no options yet.
-
 The callback, if specified, will be invoked on every connection to the rpc
 server with the connected socket.  This makes it possible for the server to
 tune the socket settings.
+
+Options TBD.
 
 ### server.addHandler( handlerName, handlerFunction(req, res, next) )
 
@@ -261,3 +267,4 @@ Todo
 - support call timeouts for more convenient error detection and cleanup
 - option to wrap the client into a "remote" object with callable methods
   that are transparently proxied to the remote service
+
