@@ -3,12 +3,12 @@ Qrpc
 
 Qrpc is a very fast remote procedure call package.
 
-This is beta quality code:  it is fully functional and it is fast, but it is
-very lightly tested, is still subject to change, and needs unit tests.
+This code is functional, but it is very lightly tested, is still subject
+to change, and needs unit tests.
 
 For familiarity, the interface is the same `createSever` / `listen` / `connect`
 that the node net and http servers use.  The implementation classes allow rpc
-over pretty much anything that's readable / writable.
+over pretty much anything that's readable / writable though.
 
 Summary
 -------
@@ -255,8 +255,8 @@ Related Work
 
 - qrpc - 60k calls / sec
 - [rpc-stream](https://npmjs.com/package/rpc-stream) - 16k calls / sec
+- [dnode](https://npmjs.com/package/dnode) - 14k calls / sec light load, throughput drops sharply with load
 - [fast](https://npmjs.com/package/fast) - 12k calls / sec
-- [dnode](https://npmjs.com/package/dnode) - 12k calls / sec
 - X [mrpc](https://www.npmjs.com/package/mrpc) - npm install failed (C++ compile errors)
 - X [kamote](https://www.npmjs.com/package/kamote) - hangs on concurrent calls (v0.0.2)
         
@@ -268,4 +268,5 @@ Todo
 - support call timeouts for more convenient error detection and cleanup
 - option to wrap the client into a "remote" object with callable methods
   that are transparently proxied to the remote service
+- maybe make the the client and server pipable event emitters
 
