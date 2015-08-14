@@ -14,6 +14,7 @@ else {
     isWorker = cluster.isWorker
     if (isMaster) {
         cluster.fork()
+        cluster.fork()
         cluster.disconnect()
     }
 }
@@ -39,6 +40,11 @@ if (isMaster) {
         }
         else res.end(data)
     })
+    var nendpoints = 0
+    server.addEndpoint('deliver', function(req, res, next) {
+        // endpoints accept data, but do not reply to the caller
+        // if (++nendpoints % 1000 === 0) process.stdout.write(".")
+    })
 }
 
 var data = 1
@@ -51,22 +57,28 @@ if (isWorker) {
         var t1 = Date.now()
         var n = 50000
         testParallel(n, data, function(err, ret) {
-            console.log("parallel: %d calls in %d ms", n, Date.now() - t1)
             t1 = Date.now()
             n = 20000
             testSeries(client, n, data, function(err, ret) {
                 console.log("series: %d calls in %d ms", n, Date.now() - t1)
-                client.call('quit')
-                client.close()
-                console.log("client done", process.memoryUsage())
+                n = 100000
+                testDeliver(client, n, data, function(e) {
+                    client.call('quit')
+                    client.close()
+                    console.log("client done", process.memoryUsage())
+                })
             })
         })
     })
 
     function testParallel( n, data, cb ) {
         ndone = 0
+        var t1 = Date.now()
         function handleEchoResponse(err, ret) {
-            if (++ndone === n) return cb()
+            if (++ndone === n) {
+                console.log("parallel: %d calls in %d ms", n, Date.now() - t1)
+                return cb()
+            }
         }
         for (i=0; i<n; i++) {
             client.call('echo', data, handleEchoResponse)
@@ -83,9 +95,24 @@ if (isWorker) {
             })
         })()
     }
+
+    function testDeliver( client, n, data, cb ) {
+        for (var i=0; i<n; i++) client.call('deliver', data)
+        var t1 = Date.now()
+        // the server runs calls in order, and since deliver does not yield,
+        // all deliver calls will have completed by the time this trailing echo runs
+        client.call('echo', data, function(err, ret) {
+            console.log("deliver to target: %d in %d ms", n, Date.now() - t1)
+            cb()
+        })
+    }
 }
 
 // 36k calls / sec parallel single process, 16.7k/s series
 // 65k calls / sec parallel two processes, 18k/s series (73k/s single int arg parallel, 20k/s series)
 // server burst peak is about 300k calls / sec (single client, in parallel, w/o req time, tiny response, meas 100k)
 // server throughput is about 100k calls served / sec (multiple clients, in parallel, w/o req time) (cpu caching effects?)
+
+// reply-less localhost calls are 23% faster (addEndpoint vs addHandler), and much faster on the server side
+// (1e6 deliveries / sec vs 120k calls / s, not including caller-side data prep and formatting)
+// (2e6 deliveries / sec from 2 client processes)

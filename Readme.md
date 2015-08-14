@@ -113,6 +113,19 @@ The response object has methods `write(data)` and `end([data])` that reply to
 the caller with the provided data.  End() will also close the call.  After the
 call is closed, no more replies can be sent.
 
+### server.addEndpoint( handlerName, handlerFunction(req, res))
+
+Define the code that will handle messages of type _handlerName_
+
+Message endpoints process messages, but do not return a response to the caller.
+This is a much more efficient way to push data for eg reporting or stats
+delivery.  The handler function should not take a next function as a reminder
+that no response will be returned to the caller.  A no-op next function is
+passed to the call just in case, however.
+
+NOTE:  The client _must_ _not_ pass a callback function when calling a message
+endoint, because endpoint calls will never be closed by the sender.
+
 ### server.listen( port, [whenListening()] )
 
 Start listening for calls.  Incoming calls will invoke the appropritae
@@ -268,4 +281,5 @@ Todo
 - support call timeouts for more convenient error detection and cleanup
 - option to wrap the client into a "remote" object with callable methods
   that are transparently proxied to the remote service
-
+- add support for one-way (no reply) calls to omit the callback handling (eg for pushing stats)
+- think about how to gc or time out callbacks that have been abandoned by the server (call not closed)
