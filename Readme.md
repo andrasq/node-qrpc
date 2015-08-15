@@ -62,6 +62,11 @@ process the 50000 calls (reading request to writing response) is 240 ms.
 The series time is all-inclusive back-to-back round-trip time; each call is
 made only after the previous response has been received.
 
+The deliver rate is the number of data items pushed to and processed by the
+server, not including data prep time (but yes including the time to format and
+transmit).  Delivery mode is one-way message passing, the data will be acted on
+by the server but no acknowledgement, status or error is returned.
+
 
 Qrpc Server
 -----------
@@ -123,6 +128,9 @@ This is a much more efficient way to push data for eg reporting or stats
 delivery.  The handler function should not take a next function as a reminder
 that no response will be returned to the caller.  A no-op next function is
 passed to the call just in case, however.
+
+Calling endpoints is one-way message passing:  the data will be acted on by the
+server but no acknowledgement, status or error is returned.
 
 NOTE:  The client _must_ _not_ pass a callback function when calling a message
 endoint, because endpoint calls will never be closed by the sender.
