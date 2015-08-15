@@ -1,13 +1,13 @@
 {
   "name": "qrpc",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "quicker nodejs remote procedure call",
   "main": "index.js",
   "author": "Andras",
   "license": "Apache 2.0",
   "repository": {
     "type": "git",
-    "url": "github.com/andrasq/node-qrpc"
+    "url": "https://github.com/andrasq/node-qrpc"
   },
   "keywords": [
     "quick",
