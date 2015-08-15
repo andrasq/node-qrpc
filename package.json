@@ -1,6 +1,6 @@
 {
   "name": "qrpc",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "quicker nodejs remote procedure call",
   "main": "index.js",
   "author": "Andras",
@@ -10,12 +10,13 @@
     "url": "https://github.com/andrasq/node-qrpc"
   },
   "keywords": [
-    "quick",
     "fast",
+    "rpc",
+    "very fast",
+    "quick",
     "remote",
     "procedure",
-    "call",
-    "rpc"
+    "call"
   ],
   "scripts": {
     "test": "qunit test"
