@@ -4,6 +4,8 @@ if (process.argv[1] && process.argv[1].indexOf('unit') > 0) return
 cluster = require('cluster')
 qrpc = require('../index')
 
+setImmediate = global.setImmediate || process.nextTick
+
 useCluster = true
 if (!useCluster) {
     isMaster = true
@@ -13,7 +15,6 @@ else {
     isMaster = cluster.isMaster
     isWorker = cluster.isWorker
     if (isMaster) {
-        cluster.fork()
         cluster.fork()
         cluster.disconnect()
     }
