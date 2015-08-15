@@ -52,6 +52,7 @@ throughput measured at the client is around 60k calls / second.
         echo data: { a: 1, b: 2, c: 3, d: 4, e: 5 }
         parallel: 50000 calls in 829 ms
         series: 20000 calls in 1127 ms
+        deliver to target: 100000 in 86 ms
 
 The parallel rate is peak server processing speed -- the rpc server decodes the
 calls, process them, and encodes and send the response.  The times shown above
@@ -257,9 +258,9 @@ Qrpc requests and responses are both simple json objects:
              m: message        // call payload, reply data
              e: error          // returned error, in response only
              s: status         // response status, one of
-                               //     ok (on write()),
-                               //     end (on end()),
-                               //     err (server error; means end)
+                               //     'ok' (on write()),
+                               //     'end' (on end()),
+                               //     'err' (server error; means end)
         }
 
 
