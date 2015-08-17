@@ -63,9 +63,9 @@ The series time is all-inclusive back-to-back round-trip time; each call is
 made only after the previous response has been received.
 
 The deliver rate is the number of data items pushed to and processed by the
-server, not including data prep time (but yes including the time to format and
-transmit).  Delivery mode is one-way message passing, the data will be acted on
-by the server but no acknowledgement, status or error is returned.
+server, not including data prep time (but yes including the time to transmit).
+Delivery mode is one-way message passing, the data will be acted on by the
+server but no acknowledgement, status or error is returned.
 
 
 Qrpc Server
@@ -125,9 +125,9 @@ Define the code that will handle messages of type _handlerName_
 
 Message endpoints process messages, but do not return a response to the caller.
 This is a much more efficient way to push data for eg reporting or stats
-delivery.  The handler function should not take a next function as a reminder
-that no response will be returned to the caller.  A no-op next function is
-passed to the call just in case, however.
+delivery.  The handler function should not declare the `next` argument as a
+reminder that no response will be returned to the caller.  A no-op next
+function is passed to the call just in case, however.
 
 Calling endpoints is one-way message passing:  the data will be acted on by the
 server but no acknowledgement, status or error is returned.
@@ -281,6 +281,7 @@ Related Work
 - [fast](https://npmjs.com/package/fast) - 12k calls / sec
 - X [mrpc](https://www.npmjs.com/package/mrpc) - npm install failed (C++ compile errors)
 - X [kamote](https://www.npmjs.com/package/kamote) - hangs on concurrent calls (v0.0.2)
+- X [fast-rpc](https://www.npmjs.com/package/fast-rpc) - just a placeholder since 2013 (v0.0.0)
         
 
 Todo
@@ -290,6 +291,6 @@ Todo
 - support call timeouts for more convenient error detection and cleanup
 - option to wrap the client into a "remote" object with callable methods
   that are transparently proxied to the remote service
-- add support for one-way (no reply) calls to omit the callback handling (eg for pushing stats)
 - think about how to gc or time out callbacks that have been abandoned by the server (call not closed)
 - maybe make the the client and server pipable event emitters
+- add support for byte-counted data payloads (for shipping eg bson data)
