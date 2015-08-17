@@ -1,6 +1,7 @@
 // this script is not part of the unit tests
 if (process.argv[1] && process.argv[1].indexOf('unit') > 0) return
 
+assert = require('assert')
 cluster = require('cluster')
 qrpc = require('../index')
 
@@ -78,6 +79,7 @@ if (isWorker) {
         function handleEchoResponse(err, ret) {
             if (++ndone === n) {
                 console.log("parallel: %d calls in %d ms", n, Date.now() - t1)
+                assert.deepEqual(ret, data)
                 return cb()
             }
         }
@@ -90,7 +92,10 @@ if (isWorker) {
         (function makeCall() {
             client.call('echo', data, function(err, ret) {
                 if (err) return cb(err)
-                if (--n <= 0) return cb();
+                if (--n <= 0) {
+                    assert.deepEqual(ret, data)
+                    return cb();
+                }
                 else if (n % 40 === 0) setImmediate(makeCall)
                 else makeCall()
             })
