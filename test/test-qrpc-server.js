@@ -26,6 +26,19 @@ module.exports ={
                 // WRITEME
                 t.done()
             },
+
+            'should return error if no handler defined': function(t) {
+                var call = { v: 1, id: 1, n: 'nonesuch' }
+                var written = null
+                var source = { read: function(){ return written ? null : JSON.stringify(call) + "\n" } }
+                var writable = { write: function(s, cb) { written = s; cb && cb() } }
+                this.server.setSource(source, writable)
+                setTimeout(function() {
+                    t.assert(written)
+                    t.assert(JSON.parse(written).e.message.indexOf('no handler') > 0)
+                    t.done()
+                }, 5)
+            },
         },
 
         'should call server.listen': function(t) {
