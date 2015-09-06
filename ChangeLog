@@ -1,6 +1,10 @@
+0.9.3
+- make server and client remove their listeners on close
+
 0.9.2
 - next() in a handler returns (null, undefined) and invokes the client-side callback.
   next(undefined, undefined) is the same as end(), and just cleans up without the callback.
+- return error to client if no handler defined for call
 
 0.9.1
 - normalize close() handling: closeFunc() does not take a callback, close() do

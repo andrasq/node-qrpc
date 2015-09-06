@@ -18,7 +18,9 @@ module.exports ={
 
     'setTarget': {
         'should return self': function(t) {
-            var ret = this.client.setTarget(null, null)
+            var fakeTarget = { write: function(s, cb) { cb() } }
+            var fakeReadable = { read: function(n, cb) { if (!cb && typeof n === 'function') cb = n; if (cb) cb() } }
+            var ret = this.client.setTarget(fakeTarget, fakeReadable)
             t.equal(ret, this.client)
             t.done()
         },
