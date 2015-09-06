@@ -1,3 +1,7 @@
+0.9.4
+- use utf8 encoding if possible to avoid splitting multi-byte chars
+- improved error detection, more unit tests
+
 0.9.3
 - make server and client remove their listeners on close
 

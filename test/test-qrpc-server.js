@@ -11,20 +11,31 @@ module.exports ={
 
     'listen method': {
         'error handling': {
-            'should throw error if no callback': function(t) {
+            'should throw error without listenFunc if no callback': function(t) {
                 try { this.server.listen(); t.fail() }
                 catch (e) { t.ok(true) }
                 t.done()
             },
 
-            'should return error if no port passed': function(t) {
-                // WRITEME
-                t.done()
+            'should return error without listenFunc with callback': function(t) {
+                t.expect(1)
+                this.server.listen(null, function(err) {
+                    t.assert(err instanceof Error)
+                    t.done()
+                })
             },
 
             'should return error if already listening': function(t) {
-                // WRITEME
-                t.done()
+                this.server.setListenFunc(function(port, cb){ return cb() })
+                t.expect(2)
+                var self = this
+                this.server.listen(0, function(err) {
+                    t.ifError(err)
+                    self.server.listen(0, function(err) {
+                        t.assert(err instanceof Error)
+                        t.done()
+                    })
+                })
             },
 
             'should return error if no handler defined': function(t) {
@@ -44,9 +55,14 @@ module.exports ={
             },
         },
 
-        'should call server.listen': function(t) {
-            // WRITEME
-            t.done()
+        'should call listenFunc': function(t) {
+            var called = false
+            var listenFunc = function(port, cb) { called = true; cb() }
+            this.server.setListenFunc(listenFunc)
+            this.server.listen(0, function(err) {
+                t.equal(called, true)
+                t.done()
+            })
         },
     },
 
