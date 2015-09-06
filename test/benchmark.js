@@ -42,6 +42,13 @@ if (isMaster) {
         }
         else res.end(data)
     })
+    server.addHandler('echo10k', function(req, res, next) {
+        var i, data = req.m
+        for (i=0; i<10000; i++) {
+            res.write(data)
+        }
+        res.end()
+    })
     var nendpoints = 0
     server.addEndpoint('deliver', function(req, res, next) {
         // endpoints accept data, but do not reply to the caller
@@ -65,9 +72,12 @@ if (isWorker) {
                 console.log("series: %d calls in %d ms", n, Date.now() - t1)
                 n = 100000
                 testDeliver(client, n, data, function(e) {
-                    client.call('quit')
-                    client.close()
-                    console.log("client done", process.memoryUsage())
+                    n = 100000
+                    testRetrieve(client, n, data, function(e) {
+                        client.call('quit')
+                        client.close()
+                        console.log("client done", process.memoryUsage())
+                    })
                 })
             })
         })
@@ -108,8 +118,23 @@ if (isWorker) {
         // the server runs calls in order, and since deliver does not yield,
         // all deliver calls will have completed by the time this trailing echo runs
         client.call('echo', data, function(err, ret) {
-            console.log("deliver to target: %d in %d ms", n, Date.now() - t1)
+            console.log("send to endpoint: %d in %d ms", n, Date.now() - t1)
             cb()
+        })
+    }
+
+    //
+    function testRetrieve( client, n, data, cb ) {
+        var i, itemCount = 0
+        var t1 = Date.now()
+        for (i=0; i<n; i+=10000) client.call('echo10k', data, function(err) {
+            if (err) throw err
+            itemCount += 1
+            if (itemCount === n) {
+                console.log("retrieved %d data in %d ms", n, Date.now() - t1)
+//console.log(client)
+                return cb()
+            }
         })
     }
 }

@@ -47,12 +47,13 @@ Qrpc can field bursts of calls at over 120k calls per second (not including the
 time to build the call and append it to the send queue).  Full end-to-end
 throughput measured at the client is around 60k calls / second.
 
-        $ npm test/benchmark.js
+        $ node test/benchmark.js
         rpc: listening on 1337
         echo data: { a: 1, b: 2, c: 3, d: 4, e: 5 }
-        parallel: 50000 calls in 842 ms
-        series: 20000 calls in 1116 ms
-        deliver to target: 100000 in 92 ms
+        parallel: 50000 calls in 833 ms
+        series: 20000 calls in 1183 ms
+        send to endpoint: 100000 in 87 ms
+        retrieved 100000 data in 941 ms
 
 The parallel rate is peak server processing speed -- the rpc server decodes the
 calls, process them, and encodes and send the response.  The times shown above
@@ -295,3 +296,4 @@ Todo
 - think about how to gc or time out callbacks that have been abandoned by the server (call not closed)
 - maybe make the the client and server pipable event emitters
 - add support for byte-counted data payloads (for shipping eg bson data)
+- provide a `client.send()` method to send to an endpoint without a callback
