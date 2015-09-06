@@ -119,15 +119,16 @@ The response object has methods `write(data)` and `end([data])` that reply to
 the caller with the provided data.  End() will also close the call.  After the
 call is closed, no more replies can be sent.
 
-### server.addEndpoint( handlerName, handlerFunction(req, res))
+### server.addHandlerNoResponse( handlerName, handlerFunction(req, res))
 
 Define the code that will handle messages of type _handlerName_
 
-Message endpoints process messages, but do not return a response to the caller.
-This is a much more efficient way to push data for eg reporting or stats
-delivery.  The handler function should not declare the `next` argument as a
-reminder that no response will be returned to the caller.  A no-op next
-function is passed to the call just in case, however.
+NoResponse handlers are message endpoints, not full RPC calls.  They process
+messages, but do not return a response to the caller.  One-way message passing
+is a much more efficient way to push data for eg reporting or stats delivery.
+The handler function should not declare the `next` argument as a reminder that
+no response will be returned to the caller.  A no-op next function is provided
+to the handler, however, just in case.
 
 Calling endpoints is one-way message passing:  the data will be acted on by the
 server but no acknowledgement, status or error is returned.

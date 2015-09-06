@@ -65,7 +65,34 @@ module.exports ={
             var msg = JSON.stringify({v: 1, id: 1, n: 'test', m: {a:1, b:2}}) + "\n"
             this.server.onData('', msg)
         },
-    }
+    },
+
+    'addHandlerNoResponse method': {
+        'should accept name and function': function(t) {
+            t.equal(this.server.handlers['test1'], undefined)
+            var fn = function(){}
+            this.server.addHandler('test1', fn)
+            t.equal(this.server.handlers['test1'], fn)
+            t.done()
+        },
+
+        'should throw error if not a function': function(t) {
+            try { this.server.addHandler('test', 1); t.fail() }
+            catch (err) { t.ok(true) }
+            t.done()
+        },
+
+        'should consume newline terminated JSON messages': function(t) {
+            t.expect(1)
+            this.server.addHandler('test', function(req, res, next) {
+                t.deepEqual(req.m, {a:1, b:2})
+                t.done()
+            })
+            var msg = JSON.stringify({v: 1, id: 1, n: 'test', m: {a:1, b:2}}) + "\n"
+            this.server.onData('', msg)
+        },
+
+    },
 }
 
 var util = require('util')

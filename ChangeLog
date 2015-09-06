@@ -1,0 +1,5 @@
+0.9.0
+- addEndpoint renamed addHandlerNoResponse
+
+0.8.0
+- addEndpoint method
