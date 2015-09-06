@@ -8,6 +8,30 @@ module.exports ={
         done()
     },
 
+    'methods': function(t) {
+        t.assert(this.client.setTarget)
+        t.assert(this.client.setCloseFunc)
+        t.assert(this.client.close)
+        t.assert(this.client.call)
+        t.done()
+    },
+
+    'setTarget': {
+        'should return self': function(t) {
+            var ret = this.client.setTarget(null, null)
+            t.equal(ret, this.client)
+            t.done()
+        },
+    },
+
+    'setCloseFunc': {
+        'should return self': function(t) {
+            var ret = this.client.setCloseFunc(function(){})
+            t.equal(ret, this.client)
+            t.done()
+        },
+    },
+
     'call method': {
         'should write newline terminated v1 JSON message to socket': function(t) {
             var socket = new MockSocket()

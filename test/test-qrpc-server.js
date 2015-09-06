@@ -35,9 +35,25 @@ module.exports ={
     },
 
     'close method': {
+        'should return error without closeFunc': function(t) {
+            this.server.close(function(err) {
+                t.assert(err instanceof Error)
+                t.done()
+            })
+        },
+
         'should call server.close if listening': function(t) {
-            // WRITEME
-            t.done()
+            var closed = false
+            var closeFunc = function(cb) { closed = true }
+            var listenFunc = function(port, cb) { cb() }
+            var server = this.server
+            server.setListenFunc(listenFunc)
+            server.setCloseFunc(closeFunc)
+            server.listen(0, function(err) {
+                server.close();
+                t.equal(closed, true)
+                t.done()
+            })
         },
     },
 
