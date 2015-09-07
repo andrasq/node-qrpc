@@ -126,7 +126,7 @@ callback.  Buffers are sent and received as base64 Buffers, other objects as
 JSON serialized strings.  End() will send the reply, if any, then close the
 call.  After the call is closed, no more replies can be sent.
 
-### server.addHandlerNoResponse( handlerName, handlerFunction(req, res))
+### server.addHandlerNoResponse( handlerName, handlerFunction(req, res) )
 
 Define the code that will handle messages of type _handlerName_
 
