@@ -69,7 +69,6 @@ module.exports = {
             })
             t.expect(1)
             for (var i=0; i<3; i++) self.client.call('send', function(err, ret) {
-console.log("AR: unexpected response!!", err.stack, ret)
                 t.fail()
             })
             setTimeout(function(){
@@ -77,5 +76,147 @@ console.log("AR: unexpected response!!", err.stack, ret)
                 t.done()
             }, 5)
         },
+    },
+
+    'data passing': {
+        before: function(done) {
+            this.echoTest = function(t, data, cb) {
+                this.server.addHandler('echo', function(req, res, next) {
+                    t.deepEqual(req.m, data)
+                    res.end(data)
+                })
+                t.expect(4)
+                this.client.call('echo', data, function(err, ret) {
+                    t.ifError(err)
+                    t.equal(typeof ret, typeof data)
+                    t.deepEqual(ret, data)
+                    cb()
+                })
+            }
+            done()
+        },
+
+        'should send and receive number as number': function(t) {
+            var data = 1234321
+            this.echoTest(t, data, function() {
+                t.done()
+            })
+        },
+
+        'should send and receive string as string': function(t) {
+            var data = "test string"
+            this.echoTest(t, data, function() {
+                t.done()
+            })
+        },
+
+        'should send and receive object as object': function(t) {
+            var data = { a: 1, b: 2.5, c: "three", d: [1,2,3], e: { f: 1 } }
+            this.echoTest(t, data, function() {
+                t.done()
+            })
+        },
+
+        'should send and receive Buffer as Buffer': function(t) {
+            var data = new Buffer(256)
+            for (var i=0; i<256; i++) data[i] = i
+            this.echoTest(t, data, function() {
+                t.done()
+            })
+        },
+    },
+
+    'flow control': {
+        'next() should return data and close the call': function(t) {
+            var data = Math.random() * 0x1000000 >>> 0
+            this.server.addHandler('ping', function(req, res, next) {
+                next(null, data)
+                res.write(1)
+                res.end(2)
+            })
+            var received = []
+            this.client.call('ping', function(err, ret) {
+                t.ifError(err)
+                received.push(ret)
+                if (received.length > 1) t.fail()
+            })
+            setTimeout(function() { t.done() }, 2)
+        },
+
+        'next() should return error': function(t) {
+            var data = new Error(Math.random() * 0x1000000 >>> 0)
+            this.server.addHandler('ping', function(req, res, next) {
+                next(data)
+            })
+            this.client.call('ping', function(err, ret) {
+                t.assert(err instanceof Error)
+                // Error objects are not iterable, cannot be compared with deepEqual
+                t.equal(err.message, data.message)
+                t.equal(err.stack, data.stack)
+                t.done()
+            })
+        },
+
+        'end() should return data': function(t) {
+            var data = Math.random() * 0x1000000 >>> 0
+            this.server.addHandler('ping', function(req, res, next) {
+                res.end(data)
+            })
+            this.client.call('ping', function(err, ret) {
+                t.ifError(err)
+                t.deepEqual(ret, data)
+                t.done()
+            })
+        },
+
+        'end() should return just one data item': function(t) {
+            var data = Math.random() * 0x1000000 >>> 0
+            this.server.addHandler('ping', function(req, res, next) {
+                res.configure({reportError: false})     // suppress "send after end()" warning
+                res.end(data)
+                res.write(1)
+                res.end(2)
+            })
+            var i, received = []
+            this.client.call('ping', function(err, ret) {
+                t.ifError(err)
+                t.deepEqual(ret, data)
+                received.push(ret)
+                if (received.length > 1) t.fail()
+            })
+            setTimeout(function(){ t.done() }, 2)
+        },
+
+        'write() should return data': function(t) {
+            var data = Math.random() * 0x1000000 >>> 0
+            this.server.addHandler('ping', function(req, res, next) {
+                res.write(data)
+                res.end()
+            })
+            this.client.call('ping', function(err, ret) {
+                t.ifError(err)
+                t.deepEqual(ret, data)
+                t.done()
+            })
+        },
+
+        'write should return multiple data items': function(t) {
+            var data = Math.random() * 0x1000000 >>> 0
+            this.server.addHandler('ping', function(req, res, next) {
+                res.write(data)
+                res.write(data)
+                res.write(data)
+                res.end()
+            })
+            var i, received = []
+            this.client.call('ping', function(err, ret) {
+                t.ifError(err)
+                t.deepEqual(ret, data)
+                received.push(ret)
+                if (received.length === 3) {
+                    t.done()
+                }
+            })
+        }
     },
 }

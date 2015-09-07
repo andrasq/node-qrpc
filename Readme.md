@@ -298,5 +298,5 @@ Todo
   that are transparently proxied to the remote service
 - think about how to gc or time out callbacks that have been abandoned by the server (call not closed)
 - maybe make the the client and server pipable event emitters
-- add support for byte-counted data payloads (for shipping eg bson data)
 - provide a `client.send()` method to send to an endpoint without a callback
+

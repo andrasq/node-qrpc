@@ -74,7 +74,8 @@ if (isWorker) {
                 testDeliver(client, n, data, function(e) {
                     n = 100000
                     testRetrieve(client, n, data, function(e) {
-                        n = 50000
+                        n = 20000
+                        // note: encoding buffers is linear in buf.length
                         var buf = new Buffer(1000)
                         testBuffers(client, n, buf, function(err, ret) {
                             client.call('quit')
@@ -149,9 +150,8 @@ if (isWorker) {
             if (err) throw err
             itemCount += 1
             if (itemCount === n) {
-console.log("AR: ret", ret)
                 assert.deepEqual(ret, data)
-                console.log("parallel buffers: %d in %d ms", n, Date.now() - t1)
+                console.log("parallel 1k buffers: %d in %d ms", n, Date.now() - t1)
                 return cb()
             }
         })
