@@ -53,6 +53,7 @@ throughput measured at the client is around 60k calls / second.
         parallel: 50000 calls in 780 ms
         series: 20000 calls in 1130 ms
         send to endpoint: 100000 in 87 ms
+        retrieved 100000 data in 825 ms
         retrieved 20000 1k Buffers in 342 ms
 
 The parallel rate is peak server processing speed -- the rpc server decodes the
@@ -63,11 +64,14 @@ process the 50000 calls (reading request to writing response) is 240 ms.
 The series time is all-inclusive back-to-back round-trip time; each call is
 made only after the previous response has been received.
 
-The deliver rate is the number of data items pushed to and processed by the
+The send rate is the number of data items pushed to and processed by the
 server, not including data prep time (but yes including the time to transmit).
-Delivery mode is one-way message passing, the data will be acted on by the
+Send-only mode is one-way message passing, the data will be acted on by the
 server but no acknowledgement, status or error is returned.
 
+Retrieval is getting multiple responses for one request, for chunked data
+fetching.  These tests make one call for every 10,000 responses, one data item
+per response.
 
 Qrpc Server
 -----------
