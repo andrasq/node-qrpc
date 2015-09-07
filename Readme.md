@@ -50,10 +50,10 @@ throughput measured at the client is around 60k calls / second.
         $ node test/benchmark.js
         rpc: listening on 1337
         echo data: { a: 1, b: 2, c: 3, d: 4, e: 5 }
-        parallel: 50000 calls in 833 ms
-        series: 20000 calls in 1183 ms
+        parallel: 50000 calls in 780 ms
+        series: 20000 calls in 1130 ms
         send to endpoint: 100000 in 87 ms
-        retrieved 100000 data in 941 ms
+        retrieved 20000 1k Buffers in 342 ms
 
 The parallel rate is peak server processing speed -- the rpc server decodes the
 calls, process them, and encodes and send the response.  The times shown above

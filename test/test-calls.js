@@ -172,7 +172,7 @@ module.exports = {
         'end() should return just one data item': function(t) {
             var data = Math.random() * 0x1000000 >>> 0
             this.server.addHandler('ping', function(req, res, next) {
-                res.configure({reportError: false})     // suppress "send after end()" warning
+                if (res.configure) res.configure({reportError: false})     // suppress "send after end()" warning
                 res.end(data)
                 res.write(1)
                 res.end(2)

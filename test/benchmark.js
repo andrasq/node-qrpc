@@ -59,6 +59,7 @@ if (isMaster) {
 var data = 1
 var data = [1, 2, 3, 4, 5]
 var data = {a:1, b:2, c:3, d:4, e:5}
+var buf = new Buffer(4000)
 
 if (isWorker) {
     var client = qrpc.connect({port: 1337}, function() {
@@ -73,14 +74,20 @@ if (isWorker) {
                 n = 100000
                 testDeliver(client, n, data, function(e) {
                     n = 100000
+                    t1 = Date.now()
                     testRetrieve(client, n, data, function(e) {
+                        console.log("retrieved %d data in %d ms", n, Date.now() - t1)
                         n = 20000
-                        // note: encoding buffers is linear in buf.length
-                        var buf = new Buffer(1000)
-                        testBuffers(client, n, buf, function(err, ret) {
-                            client.call('quit')
-                            client.close()
-                            console.log("client done", process.memoryUsage())
+                        t1 = Date.now()
+                        testRetrieve(client, n, buf.slice(0, 1000), function(e) {
+                            console.log("retrieved %d 1k Buffers in %d ms", n, Date.now() - t1)
+                            n = 20000
+                            // note: encoding buffers is linear in buf.length
+                            testBuffers(client, n, buf.slice(0, 1000), function(err, ret) {
+                                client.call('quit')
+                                client.close()
+                                console.log("client done", process.memoryUsage())
+                            })
                         })
                     })
                 })
@@ -137,7 +144,6 @@ if (isWorker) {
             itemCount += 1
             if (itemCount === n) {
                 assert.deepEqual(data, ret)
-                console.log("retrieved %d data in %d ms", n, Date.now() - t1)
                 return cb()
             }
         })
@@ -150,8 +156,8 @@ if (isWorker) {
             if (err) throw err
             itemCount += 1
             if (itemCount === n) {
-                assert.deepEqual(ret, data)
                 console.log("parallel 1k buffers: %d in %d ms", n, Date.now() - t1)
+                assert.deepEqual(ret, data)
                 return cb()
             }
         })
