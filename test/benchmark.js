@@ -74,9 +74,13 @@ if (isWorker) {
                 testDeliver(client, n, data, function(e) {
                     n = 100000
                     testRetrieve(client, n, data, function(e) {
-                        client.call('quit')
-                        client.close()
-                        console.log("client done", process.memoryUsage())
+                        n = 50000
+                        var buf = new Buffer(1000)
+                        testBuffers(client, n, buf, function(err, ret) {
+                            client.call('quit')
+                            client.close()
+                            console.log("client done", process.memoryUsage())
+                        })
                     })
                 })
             })
@@ -127,12 +131,27 @@ if (isWorker) {
     function testRetrieve( client, n, data, cb ) {
         var i, itemCount = 0
         var t1 = Date.now()
-        for (i=0; i<n; i+=10000) client.call('echo10k', data, function(err) {
+        for (i=0; i<n; i+=10000) client.call('echo10k', data, function(err, ret) {
             if (err) throw err
             itemCount += 1
             if (itemCount === n) {
+                assert.deepEqual(data, ret)
                 console.log("retrieved %d data in %d ms", n, Date.now() - t1)
-//console.log(client)
+                return cb()
+            }
+        })
+    }
+
+    function testBuffers( client, n, data, cb ) {
+        var i, itemCount = 0
+        var t1 = Date.now()
+        for (i=0; i<n; i++) client.call('echo', data, function(err, ret) {
+            if (err) throw err
+            itemCount += 1
+            if (itemCount === n) {
+console.log("AR: ret", ret)
+                assert.deepEqual(ret, data)
+                console.log("parallel buffers: %d in %d ms", n, Date.now() - t1)
                 return cb()
             }
         })

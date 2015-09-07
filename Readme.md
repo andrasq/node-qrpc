@@ -117,8 +117,10 @@ The call object has a field .m that contains the object passed to the call, if
 any, and a field .id that is the unique caller-side id of the call.
 
 The response object has methods `write(data)` and `end([data])` that reply to
-the caller with the provided data.  End() will also close the call.  After the
-call is closed, no more replies can be sent.
+the caller with the provided data. Each reply will be delivered to the client
+callback.  Buffers are sent and received as base64 Buffers, other objects as
+JSON serialized strings.  End() will send the reply, if any, then close the
+call.  After the call is closed, no more replies can be sent.
 
 ### server.addHandlerNoResponse( handlerName, handlerFunction(req, res))
 
@@ -262,15 +264,16 @@ To build an rpc service on top of net sockets the way `qrpc` does:
 Qrpc requests and responses are both simple json objects:
 
         {
-             v: 1,             // protocol version, 1: json bundle
-             id: id,           // unique message id to match calls to replies
-             n: name,          // call name string, in request only
-             m: message        // call payload, reply data
-             e: error          // returned error, in response only
-             s: status         // response status, one of
-                               //     'ok' (on write()),
-                               //     'end' (on end()),
-                               //     'err' (server error; means end)
+            v: 1,               // protocol version, 1: json bundle
+            id: id,             // unique call id to match replies to calls
+            n: name,            // call name string, in request only
+            m: message          // call payload, reply data
+            b: blob             // base64 encoded buffer payload
+            e: error            // returned error, in response only
+            s: status           // response status, one of
+                                //     'ok' (on write()),
+                                //     'end' (on end()),
+                                //     'err' (server error; means end)
         }
 
 
