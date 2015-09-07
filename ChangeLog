@@ -1,21 +1,21 @@
+0.10.0
+- send data Buffers in a binary-safe manner
+- benchmark data retrieval
+- benchmark 1k buffers
+
 0.9.4
 - use utf8 encoding if possible to avoid splitting multi-byte chars
 - improved error detection, more unit tests
-
-0.9.3
 - make server and client remove their listeners on close
-
-0.9.2
 - next() in a handler returns (null, undefined) and invokes the client-side callback.
   next(undefined, undefined) is the same as end(), and just cleans up without the callback.
 - return error to client if no handler defined for call
-
-0.9.1
 - normalize close() handling: closeFunc() does not take a callback, close() do
 - client.setCloseFunc method
-
-0.9.0
 - addEndpoint renamed addHandlerNoResponse
+
+0.8.4
+- guard against errors thrown in the handlers
 
 0.8.0
 - addEndpoint method
