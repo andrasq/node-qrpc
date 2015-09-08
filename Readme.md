@@ -3,15 +3,33 @@ Qrpc
 
 Qrpc is a very fast remote procedure call package.
 
-This code is functional, but it is very lightly tested, is still subject
-to change, and needs unit tests.
+Features:
 
-For familiarity, the interface is the same `createSever` / `listen` / `connect`
-that the node net and http servers use.  The implementation classes allow rpc
-over pretty much anything that's readable / writable though.
+- low latency, 0.05 ms round trip
+- high throughput, 0.013 ms per call avg
+- efficient connection sharing with call and response multiplexing
+- out-of-order call completion
+- fast binary Buffer transfers
+- a single call can receive multiple responses
+- one-way message sending
+- familiar middleware-like `handler(req, res, next)` message handler signature
+- familiar `function(err, ret)` client callback signature
+- familiar `createServer` / `listen` / `connect` usage
+- can communicate over sockets, streams, or pretty much anything with `read` and `write` methods
+
 
 Summary
 -------
+
+The rpc system consists of one or more clients making calls and a server that
+processes the calls and sends back responses.  Each call includes an optional
+argument; each response returns a data item and an optional error.  Calls are
+processed in the same order the client sent them.
+
+Any of the serializable JavaScript data types may be sent and received
+(numbers, strings, arrays, objects, booleans, null), as well as Buffers.
+Special objects (Date, RegExp, etc) lose their special properties across the
+rpc call.  Undefined can not be serialized, and undefined fields are omitted.
 
         var qrpc = require('qrpc')
         var server = qrpc.createServer()
@@ -23,7 +41,7 @@ Summary
             console.log("qrpc listening on port 1337")
         })
 
-        var client = qrpc.connect(1337, function() {
+        var client = qrpc.connect(1337, 'localhost', function() {
             client.call('test', {a: 1, b: 'test'}, function(err, ret) {
                 console.log("reply from server:", ret)
                 server.close()
@@ -40,6 +58,7 @@ Installation
         npm install qrpc
         npm test qrpc
 
+
 Benchmark
 ---------
 
@@ -48,6 +67,7 @@ time to build the call and append it to the send queue).  Full end-to-end
 throughput measured at the client is around 60k calls / second.
 
         $ node test/benchmark.js
+
         rpc: listening on 1337
         echo data: { a: 1, b: 2, c: 3, d: 4, e: 5 }
         parallel: 50000 calls in 780 ms
@@ -56,22 +76,25 @@ throughput measured at the client is around 60k calls / second.
         retrieved 100000 data in 825 ms
         retrieved 20000 1k Buffers in 342 ms
 
-The parallel rate is peak server processing speed -- the rpc server decodes the
-calls, process them, and encodes and send the response.  The times shown above
-include the client-side formatting and sending of the rpc messages; the time to
-process the 50000 calls (reading request to writing response) is 240 ms.
+The parallel rate is call throughput -- the rpc server decodes the calls,
+process them, and encodes and send the response.  The times shown above include
+the client-side formatting and sending of the rpc messages; the server time to
+process the 50000 calls (read request, decode, dispatch, process, encode, write
+response) is 250 ms; the 780 ms shown above includes the client time to format
+and send send the request and to read, decode and deliver the response.
 
-The series time is all-inclusive back-to-back round-trip time; each call is
-made only after the previous response has been received.
+The series time is handling latency -- it is all-inclusive back-to-back round-trip
+time; each call is made only after the previous response has been received.
 
-The send rate is the number of data items pushed to and processed by the
-server, not including data prep time (but yes including the time to transmit).
-Send-only mode is one-way message passing, the data will be acted on by the
+The send rate is the number of calls processed by the server, not including
+data prep time (but yes including the time to transmit, decode, and dispatch).
+Send-only mode is one-way message passing:  the data will be acted on by the
 server but no acknowledgement, status or error is returned.
 
 Retrieval is getting multiple responses for one request, for chunked data
 fetching.  These tests make one call for every 10,000 responses, one data item
-per response.
+(or one Buffer) per response.
+
 
 Qrpc Server
 -----------
@@ -216,10 +239,10 @@ are batched for efficiency, and arrive at the server in large chunks.  The
 server splits the stream, decodes each message, and invokes each handler.
 
 Messages are sent to named handlers; the handlers are registered with the
-server using the `addHandler` method.  Every handler takes the same
-arguments, a middleware stack-like `req, res, cb`:  the request bundle (the
-message itself), the response object, and a callback that can return a
-response and is used to return errors.
+server using the `addHandler` method.  Every handler takes the same arguments,
+a middleware stack-like `(req, res, next)`:  the request bundle (the message
+itself), the response object, and a callback that can return a response and is
+used to return errors.
 
 The response object can be used to send replies back to the caller.  The
 `write` method sends a reply message and keeps the call open for more
@@ -265,7 +288,7 @@ To build an rpc service on top of net sockets the way `qrpc` does:
 
 ### Message Format
 
-Qrpc requests and responses are both simple json objects:
+Qrpc requests and responses are sent as simple json objects:
 
         {
             v: 1,               // protocol version, 1: json bundle
@@ -284,7 +307,7 @@ Qrpc requests and responses are both simple json objects:
 Related Work
 ------------
 
-- qrpc - 60k calls / sec
+- qrpc - 60k calls / sec round-trip, 1m messages / sec dispatched
 - [rpc-stream](https://npmjs.com/package/rpc-stream) - 16k calls / sec
 - [dnode](https://npmjs.com/package/dnode) - 14k calls / sec light load, throughput drops sharply with load
 - [fast](https://npmjs.com/package/fast) - 12k calls / sec
@@ -296,7 +319,8 @@ Related Work
 Todo
 ----
 
-- support non-json (plaintext) payloads too (ie, bypass json coding)
+- more unit tests
+- server should periodically yield to the event loop
 - support call timeouts for more convenient error detection and cleanup
 - option to wrap the client into a "remote" object with callable methods
   that are transparently proxied to the remote service
@@ -304,3 +328,4 @@ Todo
 - maybe make the the client and server pipable event emitters
 - provide a `client.send()` method to send to an endpoint without a callback
 
+- support non-json (plaintext) payloads too (ie, bypass json coding)
