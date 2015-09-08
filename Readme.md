@@ -9,7 +9,7 @@ Features:
 - high throughput, 0.013 ms per call avg
 - efficient connection sharing with call and response multiplexing
 - out-of-order call completion
-- fast binary Buffer transfers
+- fast transfers of binary Buffer data
 - a single call can receive multiple responses
 - one-way message sending
 - familiar middleware-like `handler(req, res, next)` message handler signature
@@ -307,7 +307,7 @@ Qrpc requests and responses are sent as simple json objects:
 Related Work
 ------------
 
-- qrpc - 60k calls / sec round-trip, 1m messages / sec dispatched
+- [qrpc](https://npmjs.com/package/qrpc) - 60k calls / sec round-trip, 1m messages / sec dispatched
 - [rpc-stream](https://npmjs.com/package/rpc-stream) - 16k calls / sec
 - [dnode](https://npmjs.com/package/dnode) - 14k calls / sec light load, throughput drops sharply with load
 - [fast](https://npmjs.com/package/fast) - 12k calls / sec
