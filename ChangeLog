@@ -1,3 +1,8 @@
+0.10.5
+- json_encode / json_decode options to server and client
+- bring over changes from "blobs" branch
+- make server handle calls coming in Buffers
+
 0.10.3
 - speed up Buffer passing
 

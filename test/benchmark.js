@@ -4,6 +4,8 @@ if (process.argv[1] && process.argv[1].indexOf('unit') > 0) return
 assert = require('assert')
 cluster = require('cluster')
 qrpc = require('../index')
+json = { }
+//try { json = require('json-simple') } catch (err) { }
 
 setImmediate = global.setImmediate || process.nextTick
 
@@ -22,7 +24,12 @@ else {
 }
 
 if (isMaster) {
-    server = qrpc.createServer()
+    server = qrpc.createServer({
+        json_encode: json.encode || null,
+        json_decode: json.decode || null,
+    }, function onConnection(socket) {
+        //socket.setNoDelay(true)
+    })
     server.listen(1337, function() {
         console.log("rpc: listening on 1337")
     })
@@ -37,7 +44,7 @@ if (isMaster) {
     server.addHandler('echo', function(req, res, next) {
         var data = req.m
         if (Array.isArray(data)) {
-            for (var i in data) res.write(data[i])
+            for (var i=0; i<data.length; i++) res.write(data[i])
             res.end()
         }
         else res.end(data)
@@ -62,7 +69,17 @@ var data = {a:1, b:2, c:3, d:4, e:5}
 var buf = new Buffer(4000)
 
 if (isWorker) {
-    var client = qrpc.connect({port: 1337}, function() {
+    var client = qrpc.connect({
+        port: 1337,
+        host: 'localhost',
+        json_encode: json.encode || null,
+        json_decode: json.decode || null,
+    }, function whenConnected(socket) {
+        // note: writing buffers to the socket trips the Nagle algorithm; turn it off
+        //socket.setNoDelay()
+        // note: parallel calls are 30% faster with Nagle write combining, 45% for blobs,
+        // but serial calls are 1000 x faster without!
+
         console.log("echo data:", data, process.memoryUsage())
         var t1 = Date.now()
         var n = 50000
