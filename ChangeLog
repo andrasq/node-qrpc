@@ -1,3 +1,11 @@
+1.0.1
+- update docs to show Buffer usage
+- document json_encode / json_decode options
+- hold off on allowHalfOpen mode
+
+1.0.0
+- updated readme
+
 0.10.5
 - json_encode / json_decode options to server and client
 - bring over changes from "blobs" branch

@@ -35,31 +35,31 @@ Any of the serializable JavaScript data types may be sent and received
 Special objects (Date, RegExp, etc) lose their special properties across the
 rpc call.  Undefined can not be serialized, and undefined fields are omitted.
 
-	var qrpc = require('qrpc')
-	var server = qrpc.createServer()
-	server.addHandler('echo', function(req, res, next) {
+        var qrpc = require('qrpc')
+        var server = qrpc.createServer()
+        server.addHandler('echo', function(req, res, next) {
             var err = null
             res.write('test ran!')
             next(err, req.m)
-	})
+        })
         server.listen(1337, function() {
             console.log("qrpc listening on port 1337")
-	})
+        })
 
         var client = qrpc.connect(1337, 'localhost', function() {
             client.call('echo', {a: 1, b: 'test'}, function(err, ret) {
-		console.log("reply from server:", ret)
+                console.log("reply from server:", ret)
                 // => reply from server: 'test ran!'
-		// => reply from server: { a: 1, b: 'test' }
+                // => reply from server: { a: 1, b: 'test' }
             })
             client.call('echo', new Buffer("test"), function(err, ret) {
-		console.log("reply from server:", ret)
-		server.close()
-		client.close()
+                console.log("reply from server:", ret)
+                server.close()
+                client.close()
                 // => reply from server: 'test ran!'
-        	// => reply from server: <Buffer 74 65 73 74>
+                // => reply from server: <Buffer 74 65 73 74>
             })
-	})
+        })
 
 
 Installation
@@ -74,7 +74,7 @@ Benchmark
 
 Qrpc can field bursts of calls at over 120k calls per second (not including the
 time to build the call and append it to the send queue).  Full end-to-end
-throughput measured at the client is around 60k calls / second.  Timings on an
+throughput measured at the client is around 60k calls / second.  Timings on a
 32-bit AMD 3.6 GHz Phenom II x4 running Linux 3.16.0-amd64.  (Yes, 32-bit
 system with a 64-bit os.)
 
