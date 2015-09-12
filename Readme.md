@@ -9,13 +9,17 @@ Features:
 - high throughput, 0.013 ms per call avg
 - efficient connection sharing with call and response multiplexing
 - out-of-order call completion
-- fast transfers of binary Buffer data
-- a single call can receive multiple responses
-- one-way message sending
+- a single call can receive multiple responses, to stream response in chunks
+- request/response or one-way message sending
+- message is any serializable json object or a Buffer
+- can use user-specified serialization function
+- wire protocol is newline terminated strings
+- fast transfers of binary data in Buffers
 - familiar middleware-like `handler(req, res, next)` message handler signature
 - familiar `function(err, ret)` client callback signature
 - familiar `createServer` / `listen` / `connect` usage
 - can communicate over sockets, streams, or pretty much anything with `read` and `write` methods
+- very small, with minimal dependencies
 
 
 Summary
@@ -31,25 +35,31 @@ Any of the serializable JavaScript data types may be sent and received
 Special objects (Date, RegExp, etc) lose their special properties across the
 rpc call.  Undefined can not be serialized, and undefined fields are omitted.
 
-        var qrpc = require('qrpc')
-        var server = qrpc.createServer()
-        server.addHandler('test', function(req, res, next) {
+	var qrpc = require('qrpc')
+	var server = qrpc.createServer()
+	server.addHandler('echo', function(req, res, next) {
             var err = null
-            next(err, ['test ran!', req.m])
-        })
+            res.write('test ran!')
+            next(err, req.m)
+	})
         server.listen(1337, function() {
             console.log("qrpc listening on port 1337")
-        })
+	})
 
         var client = qrpc.connect(1337, 'localhost', function() {
-            client.call('test', {a: 1, b: 'test'}, function(err, ret) {
-                console.log("reply from server:", ret)
-                server.close()
-                client.close()
+            client.call('echo', {a: 1, b: 'test'}, function(err, ret) {
+		console.log("reply from server:", ret)
+                // => reply from server: 'test ran!'
+		// => reply from server: { a: 1, b: 'test' }
             })
-        })
-
-        // => reply from server: [ 'test ran!', { a: 1, b: 'test' } ]
+            client.call('echo', new Buffer("test"), function(err, ret) {
+		console.log("reply from server:", ret)
+		server.close()
+		client.close()
+                // => reply from server: 'test ran!'
+        	// => reply from server: <Buffer 74 65 73 74>
+            })
+	})
 
 
 Installation
@@ -64,7 +74,9 @@ Benchmark
 
 Qrpc can field bursts of calls at over 120k calls per second (not including the
 time to build the call and append it to the send queue).  Full end-to-end
-throughput measured at the client is around 60k calls / second.
+throughput measured at the client is around 60k calls / second.  Timings on an
+32-bit AMD 3.6 GHz Phenom II x4 running Linux 3.16.0-amd64.  (Yes, 32-bit
+system with a 64-bit os.)
 
         $ node test/benchmark.js
 
@@ -130,7 +142,10 @@ The callback, if specified, will be invoked on every connection to the rpc
 server with the connected socket.  This makes it possible for the server to
 tune the socket settings.
 
-Options TBD.
+Options:
+
+- `json_encode` - the object serializer function to use (default `JSON.stringify`)
+- `json_decode` - the object deserializer to use (default `JSON.parse`)
 
 ### server.addHandler( handlerName, handlerFunction(req, res, next) )
 
@@ -194,16 +209,29 @@ request can result in more than one response; qrpc sends all requests and
 responses over a single socket (multiplexes) and steers each response to its
 correct destination.
 
-### client = qrpc.connect( port, [host,] whenConnected(clientSocket) )
+### client = qrpc.connect( port|options, [host,] whenConnected(clientSocket) )
 
 Connect to the qrpc server listening on host:port (or 'localhost':port if host
-is not specified).  Returns the QrpcClient object.  Port may also be an options
-object to pass to `net.connect()` containing the required field `port`.
+is not specified).  Returns the QrpcClient object.
 
 If provided, the newly created net.socket will be passed to the whenConnected
 callback for socket configuration and tuning.
 
 Once connected, calls may be made with client.call()
+
+Instead of port (or port and host) an options object can be passed which is
+then passed to `net.connect()`.
+
+Options:
+
+- `port` - port to connect to (required, no default)
+- `host` - host to connect to (default 'localhost')
+- plus all other valid `net.connect()` options
+
+In addition, QrpcClient recognizes:
+
+- `json_encode` - the object serializer function to use (default JSON.stringify)
+- `json_decode` - the object deserializer to use (default JSON.parse)
 
 ### client.call( handlerName, [data,] [callback(err, replyData)] )
 
