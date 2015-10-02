@@ -1,3 +1,10 @@
+/**
+ * quick little rpc package
+ *
+ * Copyright (C) 2015 Andras Radics
+ * Licensed under the Apache License, Version 2.0
+ */
+
 qrpc = require('../index')
 
 module.exports = {

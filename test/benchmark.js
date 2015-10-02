@@ -1,3 +1,10 @@
+/**
+ * quick little rpc package
+ *
+ * Copyright (C) 2015 Andras Radics
+ * Licensed under the Apache License, Version 2.0
+ */
+
 // this script is not part of the unit tests
 if (process.argv[1] && process.argv[1].indexOf('unit') > 0) return
 
