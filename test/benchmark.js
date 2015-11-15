@@ -6,7 +6,7 @@
  */
 
 // this script is not part of the unit tests
-if (process.argv[1] && process.argv[1].indexOf('unit') > 0) return
+if (process.argv[1] && process.argv[1].indexOf('nit') > 0) return
 
 assert = require('assert')
 cluster = require('cluster')

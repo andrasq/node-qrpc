@@ -58,7 +58,7 @@ module.exports = {
             })
             var data = {a:1, b:"two", c:[1,2,3]}
             for (var i=0; i<3; i++) self.client.call('echo', data, function(err, ret) {
-                t.ifError()
+                t.ifError(err)
                 t.deepEqual(ret, data)
             })
             setTimeout(function() {
@@ -129,6 +129,51 @@ module.exports = {
             for (var i=0; i<256; i++) data[i] = i
             this.echoTest(t, data, function() {
                 t.done()
+            })
+        },
+
+        'should return empty response': function(t) {
+            var self = this
+            var pingCount = 0
+            self.server.addHandler('ping', function(req, res, next) {
+                pingCount += 1
+                next()
+            })
+            self.client.call('ping', {}, function(err, ret) {
+                t.ifError(err)
+                t.equal(ret, undefined)
+                t.equal(pingCount, 1)
+                t.done()
+            })
+        },
+
+        'should send falsy message and receive falsy reply': function(t) {
+            var self = this
+            messages = []
+            self.server.addHandler('echo', function(req, res, next) {
+                messages.push(req.m)
+                next(undefined, req.m)
+            })
+            self.client.call('echo', function(err, ret) {
+                t.ifError(err)
+                t.equal(messages[0], undefined)
+                t.equal(ret, undefined)
+                self.client.call('echo', "", function(err, ret) {
+                    t.ifError(err)
+                    t.equal(messages[1], "")
+                    t.equal(ret, "")
+                    self.client.call('echo', null, function(err, ret) {
+                        t.ifError(err)
+                        t.equal(messages[2], null)
+                        t.equal(ret, null)
+                        self.client.call('echo', 0, function(err, ret) {
+                            t.ifError(err)
+                            t.equal(messages[3], 0)
+                            t.equal(ret, 0)
+                            t.done()
+                        })
+                    })
+                })
             })
         },
     },
