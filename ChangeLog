@@ -1,3 +1,9 @@
+1.0.3
+- return non-object errors as-is
+
+1.0.2
+- missing copyright notices
+
 1.0.1
 - update docs to show Buffer usage
 - document json_encode / json_decode options

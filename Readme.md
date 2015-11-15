@@ -348,6 +348,9 @@ Related Work
 Todo
 ----
 
+- fix: empty handler callback next() does not send a response to caller
+- fix: empty handler callback next(null, 0) does not send a response to caller
+- fix: empty string "" message is not sent, req.m arrives undefined
 - more unit tests
 - server should periodically yield to the event loop
 - support call timeouts for more convenient error detection and cleanup
@@ -357,4 +360,6 @@ Todo
 - maybe make the the client and server pipable event emitters
 - provide a `client.send()` method to send to an endpoint without a callback
 
-- support non-json (plaintext) payloads too (ie, bypass json coding)
+- ? allow pre- and post-handler functions to be registered, for shared processing
+  (eg for authentication and stats logging)
+- ? allow multi-step handlers (ie an array of functions, each taking req-res-next)
