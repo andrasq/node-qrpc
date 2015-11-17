@@ -348,9 +348,6 @@ Related Work
 Todo
 ----
 
-- fix: empty handler callback next() does not send a response to caller
-- fix: empty handler callback next(null, 0) does not send a response to caller
-- fix: empty string "" message is not sent, req.m arrives undefined
 - more unit tests
 - server should periodically yield to the event loop
 - support call timeouts for more convenient error detection and cleanup
