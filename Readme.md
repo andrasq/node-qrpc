@@ -189,6 +189,19 @@ handlers.
 If the whenListening callback is provided, it will be invoked once the server
 is listening for incoming calls.
 
+### server.wrap( object [,methods] [,options] )
+
+Add handlers for the methods whose names are in the `methods` array (default all).
+The handlers will expect the method arguments list in `req.m` and will return
+all arguments given to the method callback to the calling client.
+
+To wrap functions, pass an object with the functions as named properties.
+
+Options:
+
+- `prefix` - build the rpc handlerName by prepending `prefix` to the method name
+
+
 ### server.close( )
 
 Stop listening for calls.
@@ -256,6 +269,17 @@ after end" error to their callback.
         }
 
         // produces "echo => null, { i: 123, t: 'test' }"
+
+### client.wrap( object [,methods] [,options] )
+
+Return an object with methods names as in the `methods` array (or all function
+properties on `object`) that will invoke the same-named handler on the qrpc server.
+
+To wrap functions, pass an object with the functions as named properties.
+
+Options:
+
+- `prefix` - build the rpc handlerName by prepending `prefix` to the method name
 
 
 Under The Hood
