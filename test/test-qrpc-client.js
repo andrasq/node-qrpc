@@ -10,8 +10,10 @@
 var QrpcClient = require('../lib/qrpc-client.js')
 
 module.exports ={
-    'beforeEach': function(done) {
+    'setUp': function(done) {
         this.client = new QrpcClient()
+        this.socket = new MockSocket()
+        this.client.setTarget(this.socket, this.socket)
         done()
     },
 
@@ -63,9 +65,7 @@ module.exports ={
                 t.deepEqual(reply, {reply: 'ok'})
                 t.done()
             })
-            var msg = JSON.parse(socket._written[0])
-            var reply = { v: 1, id: msg.id, m: {reply: 'ok'} }
-            socket.emit('data', JSON.stringify(reply) + "\n")
+            socket.emit('data', createReplyChunk(socket._written[0], {reply: 'ok'}))
         },
 
         'should return Error on error response': function(t) {
@@ -77,9 +77,7 @@ module.exports ={
                 t.deepEqual(err, errorObject)
                 t.done()
             })
-            var msg = JSON.parse(socket._written[0])
-            var reply = { v: 1, id: msg.id, e: errorObject }
-            socket.emit('data', JSON.stringify(reply) + "\n")
+            socket.emit('data', createReplyChunk(socket._written[0], undefined, errorObject))
         },
 
         'should return Error to all calls on socket error': function(t) {
@@ -104,6 +102,64 @@ module.exports ={
         },
     },
 
+    'wrap method': {
+        'should only wrap the specified methods': function(t) {
+            var wrapped = this.client.wrap({test1: function(){}, test2: function(){}}, ['test1'])
+            t.deepEqual(Object.keys(wrapped), ['test1'])
+            t.done()
+        },
+
+        'should prefix called rpc function names': function(t) {
+            var wrapped = this.client.wrap({test: function(){}}, {prefix: 'xy_'});
+            wrapped.test()
+            var msg = JSON.parse(this.socket._written[0])
+            t.equal(msg.n, 'xy_test')
+            t.done()
+        },
+
+        'should pass args as an array': function(t) {
+            var wrapped = this.client.wrap({test: function(){}});
+            wrapped.test()
+            t.deepEqual(JSON.parse(this.socket._written[0]).m, [])
+            wrapped.test(1)
+            t.deepEqual(JSON.parse(this.socket._written[1]).m, [1])
+            wrapped.test(1,2)
+            t.deepEqual(JSON.parse(this.socket._written[2]).m, [1,2])
+            wrapped.test(1,2,3)
+            t.deepEqual(JSON.parse(this.socket._written[3]).m, [1,2,3])
+            t.done()
+        },
+
+        'should not pass the callback': function(t) {
+            var wrapped = this.client.wrap({test: function(){}});
+            wrapped.test(1, 2, function cb(){ })
+            t.deepEqual(JSON.parse(this.socket._written[0]).m, [1, 2])
+            t.done()
+        },
+
+        'should return all arguments of response callback': function(t) {
+            var wrapped = this.client.wrap({test: function(){}});
+            wrapped.test(1, 2, 3, function(err, a, b, c) {
+                t.equal(arguments.length, 4)
+                t.equal(err, 0)
+                t.equal(a, 1)
+                t.equal(b, 2)
+                t.equal(c, 3)
+                t.done()
+            })
+            this.socket.emit('data', createReplyChunk(this.socket._written[0], [0, 1, 2, 3]))
+        },
+
+        'should return error on comms error': function(t) {
+            var wrapped = this.client.wrap({test: function(){}});
+            wrapped.test(1, 2, 3, function(err, a, b, c) {
+                t.ok(err)
+                t.equal(err.message, "oops")
+                t.done()
+            })
+            this.socket.emit('error', new Error("oops"))
+        },
+    },
 }
 
 var util = require('util')
@@ -119,8 +175,8 @@ function MockSocket( ) {
 }
 util.inherits(MockSocket, EventEmitter)
 
-function createReplyChunk( written, reply ) {
+function createReplyChunk( written, reply, error ) {
     var msg = JSON.parse(written)
-    var data = {v: 1, id: msg.id, m: reply}
+    var data = { v: 1, id: msg.id, m: reply, e: error }
     return JSON.stringify(data) + "\n"
 }
