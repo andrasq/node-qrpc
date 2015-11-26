@@ -148,6 +148,44 @@ module.exports ={
         },
 
     },
+
+    'wrap method': {
+        'should add handlers': function(t) {
+            this.server.wrap({test: function(){}})
+            t.equal(typeof this.server.handlers['test'], 'function')
+            t.done()
+        },
+
+        'should prefix handler names': function(t) {
+            this.server.wrap({test: function(){}}, {prefix: 'xy_'})
+            t.equal(typeof this.server.handlers['xy_test'], 'function')
+            t.done()
+        },
+
+        'should pass all call args to handler and return all response args to caller': function(t) {
+            var args = null, reply = []
+            this.server.wrap({
+                test: function() {
+                    args = arguments
+                    arguments[arguments.length - 1](new Error("testErr"), 4, 5, 'six')
+                }
+            })
+            var msg = JSON.stringify({ v: 1, id: 1, n: 'test', m: [1, 2, 'three']}) + "\n"
+            this.server.onData('', msg, {write: function(m){ reply.push(m) }})
+            setTimeout(function() {
+                t.equal(typeof args[3], 'function')
+                t.equal(args[0], 1)
+                t.equal(args[1], 2)
+                t.equal(args[2], 'three')
+                var msg = JSON.parse(reply[0])
+                t.equal(msg.m[0].message, "testErr")
+                t.equal(msg.m[1], 4)
+                t.equal(msg.m[2], 5)
+                t.equal(msg.m[3], 'six')
+                t.done()
+            }, 5)
+        },
+    },
 }
 
 var util = require('util')
@@ -163,8 +201,8 @@ function MockSocket( ) {
 }
 util.inherits(MockSocket, EventEmitter)
 
-function createReplyChunk( written, reply ) {
+function createReplyChunk( written, reply, error ) {
     var msg = JSON.parse(written)
-    var data = {v: 1, id: msg.id, m: reply}
+    var data = { v: 1, id: msg.id, m: reply, e: error }
     return JSON.stringify(data) + "\n"
 }
