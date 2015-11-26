@@ -69,15 +69,17 @@ module.exports ={
         },
 
         'should return Error on error response': function(t) {
+            var self = this
             var socket = new MockSocket()
             this.client.setTarget(socket, socket)
             var errorObject = {message: 'oops', code: 123, stack: 'lines', other: 'yes'}
             this.client.call('test', {a:3}, function(err, reply) {
                 t.assert(err instanceof Error)
-                t.deepEqual(err, errorObject)
+                err = self.client.message._extractError(err)
+                for (var i in errorObject) t.equal(err[i], errorObject[i])
                 t.done()
             })
-            socket.emit('data', createReplyChunk(socket._written[0], undefined, errorObject))
+            socket.emit('data', createReplyChunk(socket._written[0], undefined, this.client.message._copyError(errorObject)))
         },
 
         'should return Error to all calls on socket error': function(t) {
