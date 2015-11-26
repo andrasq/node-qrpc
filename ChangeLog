@@ -1,5 +1,7 @@
 1.1.0
 - client.wrap() method
+- server.wrap() method
+- retain Error object non-enumerable property status
 
 1.0.4
 - fix the return of null errors
