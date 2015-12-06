@@ -1,3 +1,8 @@
+1.1.1
+- allow full utf8 strings in rpc method names
+- fix client.wrap() for multiple methods
+- benchmark wrapped method calls
+
 1.1.0
 - client.wrap() method
 - server.wrap() method

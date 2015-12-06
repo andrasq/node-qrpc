@@ -26,10 +26,13 @@ else {
     isWorker = cluster.isWorker
     if (isMaster) {
         cluster.fork()
+//        cluster.fork()
+//        cluster.fork()
         cluster.disconnect()
     }
 }
 
+// Master is the server
 if (isMaster) {
     server = qrpc.createServer({
         json_encode: json.encode || null,
@@ -63,6 +66,15 @@ if (isMaster) {
         }
         res.end()
     })
+    server.wrap({wrappedEcho: function(a, cb) {
+        cb(null, a)
+    }})
+    server.wrap({wrappedEcho2: function(a, b, cb) {
+        cb(null, a, b)
+    }})
+    server.wrap({wrappedEcho3: function(a, b, c, cb) {
+        cb(null, a, b, c)
+    }})
     var nendpoints = 0
     server.addEndpoint('deliver', function(req, res, next) {
         // endpoints accept data, but do not reply to the caller
@@ -75,6 +87,7 @@ var data = [1, 2, 3, 4, 5]
 var data = {a:1, b:2, c:3, d:4, e:5}
 var buf = new Buffer(4000)
 
+// Workers are the clients
 if (isWorker) {
     var client = qrpc.connect({
         port: 1337,
@@ -108,9 +121,14 @@ if (isWorker) {
                             n = 20000
                             // note: encoding buffers is linear in buf.length
                             testBuffers(client, n, buf.slice(0, 1000), function(err, ret) {
-                                client.call('quit')
-                                client.close()
-                                console.log("client done", process.memoryUsage())
+                                n = 50000
+                                t1 = Date.now()
+                                testWrapped(client, n, data, function(err, ret) {
+                                    console.log("wrapped parallel: %d calls in %d ms", n, Date.now() - t1)
+                                    client.call('quit')
+                                    client.close()
+                                    console.log("client done", process.memoryUsage())
+                                })
                             })
                         })
                     })
@@ -137,7 +155,7 @@ if (isWorker) {
     function testSeries( client, n, data, cb ) {
         (function makeCall() {
             client.call('echo', data, function(err, ret) {
-                if (err) return cb(err)
+                if (err) throw err
                 if (--n <= 0) {
                     assert.deepEqual(ret, data)
                     return cb();
@@ -185,6 +203,39 @@ if (isWorker) {
                 return cb()
             }
         })
+    }
+
+    function testWrapped( client, n, data, cb ) {
+        var ndone = 0;
+        function handleResponse(err, ret) {
+            if (err) throw err
+            if (++ndone >= n) {
+                assert.deepEqual(ret.a, data)
+                assert.deepEqual(ret.b, data)
+                return cb()
+            }
+        }
+        if (0) {
+            var data2 = {a: data, b: data}
+            for (var i=0; i<n; i++) {
+                // 'echo' returns its arguments singly, so pass just 1
+                client.call('echo', data2, handleResponse)
+            }
+            return
+        }
+
+        // FIXME: should not need a dummy object to wrap methods by name...
+        var caller = client.wrap({dummyObject: true}, ['wrappedEcho', 'wrappedEcho2', 'wrappedEcho3'])
+        for (var i=0; i<n; i++) {
+            caller.wrappedEcho2(data, data, function(err, ret1, ret2) {
+                if (err) throw err
+                if (++ndone >= n) {
+                    assert.deepEqual(ret1, data)
+                    assert.deepEqual(ret2, data)
+                    return cb()
+                }
+            })
+        }
     }
 }
 

@@ -376,12 +376,9 @@ Todo
 - more unit tests
 - server should periodically yield to the event loop
 - support call timeouts for more convenient error detection and cleanup
-- option to wrap the client into a "remote" object with callable methods
-  that are transparently proxied to the remote service
 - think about how to gc or time out callbacks that have been abandoned by the server (call not closed)
 - maybe make the the client and server pipable event emitters
 - provide a `client.send()` method to send to an endpoint without a callback
-
 - ? allow pre- and post-handler functions to be registered, for shared processing
   (eg for authentication and stats logging)
 - ? allow multi-step handlers (ie an array of functions, each taking req-res-next)
