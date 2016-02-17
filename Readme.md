@@ -324,10 +324,11 @@ the reply.
 
 The RPC service is implemented using the `QrpcServer` and `QrpcClient` classes.
 They communicate over any bidirectional EventEmitter
-stream that supports a `write()` method.  A customized RPC can be built over
+stream or object with a `write()` method.  A customized RPC can be built over
 non-socket non-socket streams, which is how the unit tests work.
 
-To build an rpc service on top of net sockets the way `qrpc` does:
+To build an rpc service using QrpcServer and QrpcClient
+on top of net sockets the way `qrpc` does:
 
         // create qrpc server
         var server = new qrpc.QrpcServer()
