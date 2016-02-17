@@ -41,7 +41,7 @@ if (isMaster) {
         //socket.setNoDelay(true)
     })
     server.listen(1337, function() {
-        console.log("rpc: listening on 1337")
+        console.log("rpc: listening on 1337", process.memoryUsage())
     })
     server.addHandler('quit', function(req, res, next) {
         console.log("server quit", process.memoryUsage())

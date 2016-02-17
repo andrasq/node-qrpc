@@ -35,29 +35,35 @@ Any of the serializable JavaScript data types may be sent and received
 Special objects (Date, RegExp, etc) lose their special properties across the
 rpc call.  Undefined can not be serialized, and undefined fields are omitted.
 
+Server:
+
         var qrpc = require('qrpc')
         var server = qrpc.createServer()
         server.addHandler('echo', function(req, res, next) {
+            // echo sends two response messages
             var err = null
-            res.write('test ran!')
-            next(err, req.m)
+            res.write('test ran!')      // first response
+            next(err, req.m)            // final response
         })
         server.listen(1337, function() {
             console.log("qrpc listening on port 1337")
         })
 
+Client:
+
         var client = qrpc.connect(1337, 'localhost', function() {
             client.call('echo', {a: 1, b: 'test'}, function(err, ret) {
+                // client callback is invoked on every response message
                 console.log("reply from server:", ret)
                 // => reply from server: 'test ran!'
                 // => reply from server: { a: 1, b: 'test' }
             })
             client.call('echo', new Buffer("test"), function(err, ret) {
                 console.log("reply from server:", ret)
-                server.close()
-                client.close()
                 // => reply from server: 'test ran!'
                 // => reply from server: <Buffer 74 65 73 74>
+                server.close()
+                client.close()
             })
         })
 
@@ -78,7 +84,7 @@ throughput measured at the client is around 60k calls / second.  Timings on a
 32-bit AMD 3.6 GHz Phenom II x4 running Linux 3.16.0-amd64.  (Yes, 32-bit
 system with a 64-bit os.)
 
-        $ node test/benchmark.js
+        $ node-v0.10.29 test/benchmark.js
 
         rpc: listening on 1337
         echo data: { a: 1, b: 2, c: 3, d: 4, e: 5 }
@@ -382,3 +388,8 @@ Todo
 - ? allow pre- and post-handler functions to be registered, for shared processing
   (eg for authentication and stats logging)
 - ? allow multi-step handlers (ie an array of functions, each taking req-res-next)
+- option to auto-reconnect if connection drops
+- way to test whether connection was dropped since last test (counter? or connection id?)
+  to check whether datagrams got there ok
+- Use Cases readme section to discuss rpc, send datagrams to server (addHandlerNoResponse),
+  data retrieval (multiple replies from server)
