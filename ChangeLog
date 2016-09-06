@@ -1,3 +1,6 @@
+1.1.2
+- unit test with qnit
+
 1.1.1
 - allow full utf8 strings in rpc method names
 - fix client.wrap() for multiple methods
