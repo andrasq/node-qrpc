@@ -10,6 +10,7 @@ if (process.argv[1] && process.argv[1].indexOf('nit') > 0) return
 
 assert = require('assert')
 cluster = require('cluster')
+aflow = require('aflow')
 qrpc = require('../index')
 json = { }
 //try { json = require('json-simple') } catch (err) { }
@@ -94,46 +95,57 @@ if (isWorker) {
         host: 'localhost',
         json_encode: json.encode || null,
         json_decode: json.decode || null,
-    }, function whenConnected(socket) {
+    },
+    function whenConnected(socket) {
         // note: writing buffers to the socket trips the Nagle algorithm; turn it off
         //socket.setNoDelay()
         // note: parallel calls are 30% faster with Nagle write combining, 45% for blobs,
         // but serial calls are 1000 x faster without!
+        // but node-v6.7.0 is slower with setNoDelay than without
 
         console.log("echo data:", data, process.memoryUsage())
-        var t1 = Date.now()
-        var n = 50000
+        var n, t1, t2
+
+        n = 50000; t1 = Date.now()
         testParallel(n, data, function(err, ret) {
-            t1 = Date.now()
-            n = 20000
-            testSeries(client, n, data, function(err, ret) {
-                console.log("series: %d calls in %d ms", n, Date.now() - t1)
-                n = 100000
-                testDeliver(client, n, data, function(e) {
-                    n = 100000
-                    t1 = Date.now()
-                    testRetrieve(client, n, data, function(e) {
-                        console.log("retrieved %d data in %d ms", n, Date.now() - t1)
-                        n = 20000
-                        t1 = Date.now()
-                        testRetrieve(client, n, buf.slice(0, 1000), function(e) {
-                            console.log("retrieved %d 1k Buffers in %d ms", n, Date.now() - t1)
-                            n = 20000
-                            // note: encoding buffers is linear in buf.length
-                            testBuffers(client, n, buf.slice(0, 1000), function(err, ret) {
-                                n = 50000
-                                t1 = Date.now()
-                                testWrapped(client, n, data, function(err, ret) {
-                                    console.log("wrapped parallel: %d calls in %d ms", n, Date.now() - t1)
-                                    client.call('quit')
-                                    client.close()
-                                    console.log("client done", process.memoryUsage())
-                                })
-                            })
-                        })
-                    })
-                })
-            })
+            // already printed timings
+
+        n = 20000; t1 = Date.now()
+        testSeries(client, n, data, function(err, ret) {
+            console.log("series: %d calls in %d ms", n, Date.now() - t1)
+
+        n = 100000; t1 = Date.now()
+        testDeliver(client, n, data, function(e) {
+            // already printed
+
+        n = 100000; t1 = Date.now()
+        testRetrieve(client, n, data, function(e) {
+            t2 = Date.now()
+            console.log("retrieved %d data in %d ms", n, t2 - t1)
+
+        n = 20000; t1 = Date.now()
+        testRetrieve(client, n, buf.slice(0, 1000), function(e) {
+            console.log("retrieved %d 1k Buffers in %d ms", n, Date.now() - t1)
+
+            // note: encoding buffers is linear in buf.length
+        n = 20000; t1 = Date.now()
+        testBuffers(client, n, buf.slice(0, 1000), function(err, ret) {
+            // already printed
+
+        n = 50000; t1 = Date.now()
+        testWrapped(client, n, data, function(err, ret) {
+            t2 = Date.now()
+            console.log("wrapped parallel: %d calls in %d ms", n, t2 - t1)
+
+            client.call('quit')
+            client.close()
+            console.log("client done", process.memoryUsage())
+        })
+        })
+        })
+        })
+        })
+        })
         })
     })
 
@@ -142,7 +154,8 @@ if (isWorker) {
         var t1 = Date.now()
         function handleEchoResponse(err, ret) {
             if (++ndone === n) {
-                console.log("parallel: %d calls in %d ms", n, Date.now() - t1)
+                var t2 = Date.now()
+                console.log("parallel: %d calls in %d ms", n, t2 - t1)
                 assert.deepEqual(ret, data)
                 return cb()
             }
@@ -172,7 +185,8 @@ if (isWorker) {
         // the server runs calls in order, and since deliver does not yield,
         // all deliver calls will have completed by the time this trailing echo runs
         client.call('echo', data, function(err, ret) {
-            console.log("send to endpoint: %d in %d ms", n, Date.now() - t1)
+            var t2 = Date.now()
+            console.log("send to endpoint: %d in %d ms", n, t2 - t1)
             cb()
         })
     }
