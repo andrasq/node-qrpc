@@ -19,7 +19,9 @@
     "call"
   ],
   "scripts": {
-    "test": "qnit test"
+    "test": "qnit test",
+    "coverage": "nyc --version && nyc --reporter text --reporter lcov qnit test* || echo nyc not installed",
+    "clean": "rm -rf .nyc_output coverage/"
   },
   "bugs": {
     "url": "https://github.com/andrasq/node-qrpc/issues"
