@@ -28,7 +28,7 @@
   },
   "homepage": "https://github.com/andrasq/node-qrpc",
   "dependencies": {
-    "mongoid-js": "1.0.6",
+    "mongoid-js": "1.1.0",
     "qinvoke": "0.9.1"
   },
   "devDependencies": {
