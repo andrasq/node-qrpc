@@ -1,5 +1,7 @@
 1.1.2
 - unit test with qnit
+- move `qinvoke` into its own package
+- npm script targets `coverage` and `clean`
 
 1.1.1
 - allow full utf8 strings in rpc method names
