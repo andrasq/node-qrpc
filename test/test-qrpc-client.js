@@ -72,11 +72,13 @@ module.exports ={
             var self = this
             var socket = new MockSocket()
             this.client.setTarget(socket, socket)
-            var errorObject = {message: 'oops', code: 123, stack: 'lines', other: 'yes'}
+            var errorObject = new Error("oops")
+            var props = {message: 'oops', code: 123, stack: 'lines', other: 'yes'}
+            for (var k in props) errorObject[k] = props[k]
             this.client.call('test', {a:3}, function(err, reply) {
                 t.assert(err instanceof Error)
-                err = self.client.message._extractError(err)
-                for (var i in errorObject) t.equal(err[i], errorObject[i])
+                t.deepEqual(Object.getOwnPropertyNames(errorObject), Object.getOwnPropertyNames(err));
+                for (var i in props) t.equal(err[i], errorObject[i])
                 t.done()
             })
             socket.emit('data', createReplyChunk(socket._written[0], undefined, this.client.message._copyError(errorObject)))

@@ -1,6 +1,6 @@
 {
   "name": "qrpc",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "very fast nodejs remote procedure call",
   "main": "index.js",
   "author": "Andras",
@@ -29,7 +29,7 @@
   "homepage": "https://github.com/andrasq/node-qrpc",
   "dependencies": {
     "mongoid-js": "1.1.0",
-    "qinvoke": "0.9.1"
+    "qinvoke": "0.11.1"
   },
   "devDependencies": {
     "qnit": "0.13.0"
