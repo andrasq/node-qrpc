@@ -1,5 +1,6 @@
 1.1.3
 - upgrade to qinvoke 0.11.0 for _copyError and _extractError
+  so now only Errors are delivered as Error objects, others are just objects
 
 1.1.2
 - unit test with qnit
