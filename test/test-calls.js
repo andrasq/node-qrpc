@@ -156,12 +156,12 @@ module.exports = {
             })
             self.client.call('echo', function(err, ret) {
                 t.ifError(err)
-                t.equal(messages[0], undefined)
-                t.equal(ret, undefined)
+                t.strictEqual(messages[0], undefined)
+                t.strictEqual(ret, undefined)
                 self.client.call('echo', "", function(err, ret) {
                     t.ifError(err)
-                    t.equal(messages[1], "")
-                    t.equal(ret, "")
+                    t.strictEqual(messages[1], "")
+                    t.strictEqual(ret, "")
                     self.client.call('echo', null, function(err, ret) {
                         t.ifError(err)
                         t.equal(messages[2], null)
