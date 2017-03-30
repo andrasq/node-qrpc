@@ -87,9 +87,11 @@ var data = 1
 var data = [1, 2, 3, 4, 5]
 var data = {a:1, b:2, c:3, d:4, e:5}
 var buf = new Buffer(4000)
+var data1k = {}; for (var i=1; i<122; i++) data1k[i] = i;       // 1002 byte json string
 
 // Workers are the clients
 if (isWorker) {
+console.log("AR: worker", cluster.worker.id);
     var client = qrpc.connect({
         port: 1337,
         host: 'localhost',
@@ -132,6 +134,10 @@ if (isWorker) {
         testBuffers(client, n, buf.slice(0, 1000), function(err, ret) {
             // already printed
 
+        n = 20000; t1 = Date.now()
+        testData1K(client, n, data1k, function(err, ret) {
+            var t2 = Date.now();
+
         n = 50000; t1 = Date.now()
         testWrapped(client, n, data, function(err, ret) {
             t2 = Date.now()
@@ -140,6 +146,7 @@ if (isWorker) {
             client.call('quit')
             client.close()
             console.log("client done", process.memoryUsage())
+        })
         })
         })
         })
@@ -203,6 +210,22 @@ if (isWorker) {
                 return cb()
             }
         })
+    }
+
+    function testData1K( client, n, data, cb ) {
+        ndone = 0
+        var t1 = Date.now()
+        function handleEchoResponse(err, ret) {
+            if (++ndone === n) {
+                var t2 = Date.now()
+                console.log("parallel 1K object: %d calls in %d ms", n, t2 - t1)
+                assert.deepEqual(ret, data)
+                return cb()
+            }
+        }
+        for (i=0; i<n; i++) {
+            client.call('echo', data, handleEchoResponse)
+        }
     }
 
     function testBuffers( client, n, data, cb ) {
