@@ -168,17 +168,18 @@ call.  After the call is closed, no more replies can be sent.
 
 ### server.addHandlerNoResponse( handlerName, handlerFunction(req, res) )
 
-Define the code that will handle messages of type _handlerName_
+Define the code that will handle messages of type `handlerName`.
 
-NoResponse handlers are message endpoints, not full RPC calls.  They process
+NoResponse handlers are endpoints for one-way messages, not full RPC calls.  They process
 messages, but do not return a response to the caller.  One-way message passing
 is a much more efficient way to push data for eg reporting or stats delivery.
 The handler function should not declare the `next` argument as a reminder that
-no response will be returned to the caller.  A no-op next function is passed in
-to the handler, however, just in case.
+no response will be returned to the caller.  A no-op `next` function is passed
+to the handler, though, just in case.
 
 Calling endpoints is one-way message passing:  the data will be acted on by the
-server but no acknowledgement, status or error is returned.
+server but no acknowledgement, status or error is returned.  This offers a very
+fast pipelined path to ship data.
 
 NOTE:  The client _must_ _not_ pass a callback function when calling a message
 endoint, because this would leak memory.  Endpoint calls will never be closed by
