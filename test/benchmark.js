@@ -77,9 +77,18 @@ if (isMaster) {
         cb(null, a, b, c)
     }})
     var nendpoints = 0
-    server.addEndpoint('deliver', function(req, res, next) {
+    server.addEndpoint('deliver', function(req, res) {
         // endpoints accept data, but do not reply to the caller
         // if (++nendpoints % 1000 === 0) process.stdout.write(".")
+    })
+    server.addEndpoint('logline', function(req, res) {
+        // log line received, append it to the logfile
+        // qlogger.info(req.m)
+    })
+    server.addHandler('syncLog', function(req, res, next) {
+        // fflush the logs, ack back to the caller
+        // qlogger.fflush(next)
+        next()
     })
 }
 
@@ -88,6 +97,7 @@ var data = [1, 2, 3, 4, 5]
 var data = {a:1, b:2, c:3, d:4, e:5}
 var buf = new Buffer(4000)
 var data1k = {}; for (var i=1; i<122; i++) data1k[i] = i;       // 1002 byte json string
+var logline = "200 byte logline string xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
 
 // Workers are the clients
 if (isWorker) {
@@ -129,6 +139,11 @@ console.log("AR: worker", cluster.worker.id);
         testRetrieve(client, n, buf.slice(0, 1000), function(e) {
             console.log("retrieved %d 1k Buffers in %d ms", n, Date.now() - t1)
 
+        n = 100000; t1 = Date.now()
+        testLogging(client, n, logline, function(e) {
+            t2 = Date.now()
+            console.log("logged %d 200B lines in %d ms", n, t2-t1)
+
             // note: encoding buffers is linear in buf.length
         n = 20000; t1 = Date.now()
         testBuffers(client, n, buf.slice(0, 1000), function(err, ret) {
@@ -146,6 +161,7 @@ console.log("AR: worker", cluster.worker.id);
             client.call('quit')
             client.close()
             console.log("client done", process.memoryUsage())
+        })
         })
         })
         })
@@ -210,6 +226,22 @@ console.log("AR: worker", cluster.worker.id);
                 return cb()
             }
         })
+    }
+
+    function testLogging( client, n, data, cb ) {
+        var nsent = 0;
+        var batchSize = 10000
+        function uploadLoop() {
+            do {
+                for (i=0; i<10; i++) client.call('logline', data);
+                nsent += i;
+            } while (nsent % batchSize !== 0 && nsent < n)
+            client.call('syncLog', function(err, ret) {
+                if (nsent < n) setImmediate(uploadLoop);
+                else cb()
+            })
+        }
+        uploadLoop()
     }
 
     function testData1K( client, n, data, cb ) {
