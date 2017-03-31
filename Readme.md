@@ -255,10 +255,14 @@ In addition, QrpcClient recognizes:
 Invoke the handler named _handlerName_, and return the server reply via the
 callback.  Handlers are registered on the server with addHandler().  Data is
 optional; if any data is specified, it is passed in the call to the server in
-`req.m`.
+`req.m` unless it is a `Buffer`, which is passed in `req.b`.
 
 Omitting the callback sends a one-way message to the server.  Any response
 received from the server will be discarded.
+
+Note: `Buffers` maybe be sent only standalone.  Sending an object that has as a
+Buffer as a property will arrive as a JSON.stringified Buffer `string`and not as an
+`instanceof Buffer`.
 
 ### client.close( )
 
