@@ -41,6 +41,22 @@ module.exports = {
                 t.done()
             },
 
+            'should encode very long method names': function(t) {
+                var msg = {v:1, n:"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", m:null}
+                var bundle = this.message.encodeV1(msg)
+                var json = JSON.parse(bundle)
+                t.deepEqual(json, msg)
+                t.done()
+            },
+
+            'should encode utf8 method names': function(t) {
+                var msg = {v:1, n:"Hello, \xff\xc8 world", m:null}
+                var bundle = this.message.encodeV1(msg)
+                var json = JSON.parse(bundle)
+                t.deepEqual(json, msg)
+                t.done()
+            },
+
             'should include error': function(t) {
                 var bundle = this.message.encodeV1({e: new Error("test error")})
                 t.assert(bundle.match(/"message":"test error"/))
@@ -115,6 +131,28 @@ module.exports = {
                 t.done()
             },
 
+            'errors': {
+                'should decode malformed blob-length': function(t) {
+                    var bundle = '{"v":1,"b":999999,"m":{"a":123},"b":"////"}'
+                    var json = this.message.decodeV1(bundle)
+                    t.deepEqual(json.m, {a: 123})
+                    t.deepEqual(json.b, new Buffer("\xff\xff\xff", 'binary'))
+                    t.done()
+                },
+
+                'should return error on malformed m': function(t) {
+                    var bundle = '{"v":1,"m":{a}}'
+                    var json = this.message.decodeV1(bundle)
+                    t.ok(json instanceof Error)
+                    t.done();
+                },
+
+                'should tolerate "m":undefined': function(t) {
+                    var json = this.message.decodeV1('{"v":1,"m":undefined,"e":{"err":1}}')
+                    t.deepEqual(json.e, {err:1})
+                    t.done()
+                }
+            }
         },
     },
 
