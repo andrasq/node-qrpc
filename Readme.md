@@ -151,16 +151,16 @@ Options:
 
 ### server.addHandler( handlerName, handlerFunction(req, res, next) )
 
-Define the code that will handle calls of type _handlerName_
+Define the code that will process calls of type `handlerName`.
 
 A handler receives 3 parameters just like a middleware stack function: the
-call object (req), the response object (res), and a callback that can be used
-to return errors and/or data.
+call object (`req`), the response object (`res`), and a callback `next` that
+can be used to return errors and/or data.
 
-The call object has a field .m that contains the object passed to the call, if
-any, and a field .id that is the unique caller-side id of the call.
+The `req` object has a field `.m` that contains the object passed to the call, if
+any, and a field `.id` that is the unique caller-side id of the call.
 
-The response object has methods `write(data)` and `end([data])` that reply to
+The `res` object has methods `write(data [,cb])` and `end([data] [,cb])` that reply to
 the caller with the provided data. Each reply will be delivered to the client
 callback.  Buffers are sent and received as base64 Buffers, other objects as
 JSON serialized strings.  End() will send the reply, if any, then close the
