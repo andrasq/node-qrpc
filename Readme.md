@@ -27,52 +27,48 @@ Summary
 
 The rpc system consists of one or more clients making calls and a server that
 processes the calls and sends back responses.  Each call includes an optional
-argument; each response returns a data item and an optional error.  Calls are
-processed in the same order the client sent them.
+argument; each response returns a data item and an optional error.
 
 Any of the serializable JavaScript data types may be sent and received
 (numbers, strings, arrays, objects, booleans, null), as well as Buffers.
 Special objects (Date, RegExp, etc) lose their special properties across the
 rpc call.  Undefined can not be serialized, and undefined fields are omitted.
 
+Calls are transmitted and run in the order made (even though they may finish out of
+order).  In particular, this means that receipt of a stream of one-way messages can
+be explicitly verified by inserting a callback-ed call into the message stream.
+(Eg the verifier in a logging server could make an rpc call to flush the data,
+thus ensuring that data has been both received and persisted.)
+
 Server:
 
-        var qrpc = require('qrpc')
-        var server = qrpc.createServer()
-        server.addHandler('echo', function(req, res, next) {
-            // echo sends two response messages
-            var err = null
-            res.write('test ran!')      // first response
-            next(err, req.m)            // final response
-        })
-        server.listen(1337, function() {
-            console.log("qrpc listening on port 1337")
-        })
+    var qrpc = require('qrpc')
+    var server = qrpc.createServer()
+    server.addHandler('echo', function(req, res, next) {
+        // echo sends two response messages
+        var err = null
+        res.write('test ran!')      // first response
+        next(err, req.m)            // final response
+    })
+    server.listen(1337, function() {
+        console.log("qrpc listening on port 1337")
+    })
 
 Client:
 
-        var client = qrpc.connect(1337, 'localhost', function() {
-            client.call('echo', {a: 1, b: 'test'}, function(err, ret) {
-                // client callback is invoked on every response message
-                console.log("reply from server:", ret)
-                // => reply from server: 'test ran!'
-                // => reply from server: { a: 1, b: 'test' }
-            })
-            client.call('echo', new Buffer("test"), function(err, ret) {
-                console.log("reply from server:", ret)
-                // => reply from server: 'test ran!'
-                // => reply from server: <Buffer 74 65 73 74>
-                server.close()
-                client.close()
-            })
+    var client = qrpc.connect(1337, 'localhost', function() {
+        client.call('echo', {a: 1, b: 'test'}, function(err, ret) {
+            // client callback is invoked on every response message
+            console.log("reply from server:", ret)
+            // => reply from server: 'test ran!'
+            // => reply from server: { a: 1, b: 'test' }
         })
-
-
-Installation
-------------
-
-        npm install qrpc
-        npm test qrpc
+        client.call('echo', new Buffer("test"), function(err, ret) {
+            console.log("reply from server:", ret)
+            // => reply from server: 'test ran!'
+            // => reply from server: <Buffer 74 65 73 74>
+        })
+    })
 
 
 Benchmark
@@ -84,15 +80,15 @@ throughput measured at the client is around 60k calls / second.  Timings on a
 32-bit AMD 3.6 GHz Phenom II x4 running Linux 3.16.0-amd64.  (Yes, 32-bit
 system with a 64-bit os.)
 
-        $ node-v0.10.29 test/benchmark.js
+    $ node-v0.10.29 test/benchmark.js
 
-        rpc: listening on 1337
-        echo data: { a: 1, b: 2, c: 3, d: 4, e: 5 }
-        parallel: 50000 calls in 780 ms
-        series: 20000 calls in 1130 ms
-        send to endpoint: 100000 in 87 ms
-        retrieved 100000 data in 825 ms
-        retrieved 20000 1k Buffers in 342 ms
+    rpc: listening on 1337
+    echo data: { a: 1, b: 2, c: 3, d: 4, e: 5 }
+    parallel: 50000 calls in 780 ms
+    series: 20000 calls in 1130 ms
+    send to endpoint: 100000 in 87 ms
+    retrieved 100000 data in 825 ms
+    retrieved 20000 1k Buffers in 342 ms
 
 The parallel rate is call throughput -- the rpc server decodes the calls,
 process them, and encodes and send the response.  The times shown above include
@@ -185,7 +181,8 @@ Calling endpoints is one-way message passing:  the data will be acted on by the
 server but no acknowledgement, status or error is returned.
 
 NOTE:  The client _must_ _not_ pass a callback function when calling a message
-endoint, because endpoint calls will never be closed by the sender.
+endoint, because this would leak memory.  Endpoint calls will never be closed by
+the sender, so the callback context would never be freed.
 
 ### server.listen( port, [whenListening()] )
 
@@ -199,12 +196,12 @@ is listening for incoming calls.
 
 Stop listening for calls.
 
-        var server = qrpc.createServer()
-        server.addHandler('echo', function(req, res, next) {
-            // echo server, return our arguments
-            next(null, req.m)
-        })
-        server.listen(1337)
+    var server = qrpc.createServer()
+    server.addHandler('echo', function(req, res, next) {
+        // echo server, return our arguments
+        next(null, req.m)
+    })
+    server.listen(1337)
 
 ### server.wrap( object [,methods] [,options] )
 
@@ -267,14 +264,13 @@ received from the server will be discarded.
 Disconnect from the qrpc server.  Any subsequent calls will return a "write
 after end" error to their callback.
 
+    client = qrpc.connect(1337, 'localhost', function whenConnected() {
+        client.call('echo', {i: 123, t: 'test'}, function(err, ret) {
+            console.log("echo =>", err, ret)
+        })
+    }
 
-        client = qrpc.connect(1337, 'localhost', function whenConnected() {
-            client.call('echo', {i: 123, t: 'test'}, function(err, ret) {
-                console.log("echo =>", err, ret)
-            })
-        }
-
-        // produces "echo => null, { i: 123, t: 'test' }"
+    // produces "echo => null, { i: 123, t: 'test' }"
 
 ### client.wrap( object [,methods] [,options] )
 
@@ -330,39 +326,39 @@ non-socket non-socket streams, which is how the unit tests work.
 To build an rpc service using QrpcServer and QrpcClient
 on top of net sockets the way `qrpc` does:
 
-        // create qrpc server
-        var server = new qrpc.QrpcServer()
-        var netServer = net.createServer(function(socket) {
-            // have the server read rpc calls from the first arg
-            // and write responses to the second arg
-            server.setSource(socket, socket)
-        })
-        server.setListenFunc(function(port, cb){ netServer.listen(port, cb) })
-        server.setCloseFunc(function(){ netServer.close() })
+    // create qrpc server
+    var server = new qrpc.QrpcServer()
+    var netServer = net.createServer(function(socket) {
+        // have the server read rpc calls from the first arg
+        // and write responses to the second arg
+        server.setSource(socket, socket)
+    })
+    server.setListenFunc(function(port, cb){ netServer.listen(port, cb) })
+    server.setCloseFunc(function(){ netServer.close() })
 
 
-        // create qrpc client to talk to the server
-        var client = new qrpc.QrpcClient()
-        var socket = net.connect(1337, 'localhost')
-        client.setTarget(socket, socket)
+    // create qrpc client to talk to the server
+    var client = new qrpc.QrpcClient()
+    var socket = net.connect(1337, 'localhost')
+    client.setTarget(socket, socket)
 
 ### Message Format
 
 Qrpc requests and responses are sent as simple serialized json objects,
 one per line:
 
-        {
-            v: 1,               // protocol version, 1: json bundle
-            id: id,             // unique call id to match replies to calls
-            n: name,            // call name string, in request only
-            m: message          // call payload, reply data
-            b: blob             // base64 encoded buffer payload
-            e: error            // returned error, in response only
-            s: status           // response status, one of
-                                //     'ok' (on write()),
-                                //     'end' (on end()),
-                                //     'err' (server error; means end)
-        }
+    {
+        v: 1,               // protocol version, 1: json bundle
+        id: id,             // unique call id to match replies to calls
+        n: name,            // call name string, in request only
+        e: error            // returned error, in response only
+        s: status           // response status, one of
+                            //   'ok' (on write()),
+                            //   'end' (on end()),
+                            //   'err' (server error; means end)
+        m: message          // object payload, in call or response
+        b: blob             // base64 encoded buffer payload
+    }
 
 
 Related Work
