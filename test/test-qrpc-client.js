@@ -73,8 +73,19 @@ module.exports ={
             var socket = new MockSocket()
             this.client.setTarget(socket, socket)
             var errorObject = new Error("oops")
+
+            // node v0.8 and v0.10 have two undefined error properties set: `arguments` and `type`
+            // JSON.stringify can not pass undefined values, so we do not receive them.
+            // Delete them to make this test pass under node-v0.10.42
+            var errorObjectProperties = Object.getOwnPropertyNames(errorObject);
+            for (var i=0; i<errorObjectProperties.length; i++) {
+                var k = errorObjectProperties[i];
+                if (errorObject[k] === undefined) delete errorObject[k];
+            }
+
             var props = {message: 'oops', code: 123, stack: 'lines', other: 'yes'}
             for (var k in props) errorObject[k] = props[k]
+
             this.client.call('test', {a:3}, function(err, reply) {
                 t.assert(err instanceof Error)
                 t.deepEqual(Object.getOwnPropertyNames(errorObject).sort(), Object.getOwnPropertyNames(err).sort());
