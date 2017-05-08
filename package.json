@@ -1,6 +1,6 @@
 {
   "name": "qrpc",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "very fast nodejs remote procedure call",
   "main": "index.js",
   "author": "Andras",
@@ -20,8 +20,9 @@
   ],
   "scripts": {
     "test": "qnit test",
-    "coverage": "nyc --version && nyc --reporter text --reporter lcov qnit test* || echo nyc not installed",
-    "clean": "rm -rf .nyc_output coverage/"
+    "coverage": "nyc --reporter text --reporter lcov qnit test*",
+    "clean": "rm -rf .nyc_output coverage/",
+    "coveralls": "nyc --reporter text-lcov npm test | coveralls"
   },
   "bugs": {
     "url": "https://github.com/andrasq/node-qrpc/issues"
@@ -32,6 +33,6 @@
     "qinvoke": "0.11.1"
   },
   "devDependencies": {
-    "qnit": "0.13.0"
+    "qnit": "0.15.1"
   }
 }
