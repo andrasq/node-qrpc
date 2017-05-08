@@ -77,11 +77,28 @@ Client:
 Benchmark
 ---------
 
-Qrpc can field bursts of calls at over 120k calls per second (not including the
-time to build the call and append it to the send queue).  Full end-to-end
-throughput measured at the client is around 60k calls / second.  Timings on a
-32-bit AMD 3.6 GHz Phenom II x4 running Linux 3.16.0-amd64.  (Yes, 32-bit
-system with a 64-bit os.)
+Qrpc can sustain 200k calls per second.  Full end-to-end throughput measured at the
+client is around 160k round-trip calls per second.  Timings on a 32-bit i7-6700k
+Skylake at 4410 MHz running Linux 3.16-amd64.  (64-bit kernel with 32-bit apps:
+double the memory of a full 64-bit system for free!)
+
+    $ node-v6.10.2 test/benchmark.js
+
+    rpc: listening on 1337
+    echo data: { a: 1, b: 2, c: 3, d: 4, e: 5 }
+    ----
+    parallel: 50000 calls in 314 ms
+    series: 20000 calls in 697 ms
+    send to endpoint: 100000 in 38 ms
+    retrieved 100000 data in 245 ms
+    retrieved 20000 1k Buffers in 82 ms
+    parallel 1k buffers: 20000 in 228 ms
+    wrapped parallel: 50000 calls in 452 ms
+    parallel 1K object: 20000 calls in 1032 ms
+    logged 100000 200B lines in 483 ms syncing every 250 lines
+
+Here are the original timings on the old AMD 3600 MHz Phenom II running the
+same Linux 3.16.0-amd64:
 
     $ node-v0.10.29 test/benchmark.js
 
@@ -111,6 +128,16 @@ server but no acknowledgement, status or error is returned.
 Retrieval is getting multiple responses for one request, for chunked data
 fetching.  These tests make one call for every 10,000 responses, one data item
 (or one Buffer) per response.
+
+The logging benchmark ships 200-byte log lines to the server with one-way messages,
+and every 250 lines makes a round-trip rpc call to sync them, ie to ensure that all
+preceding lines have been successfully received and persisted.  `qrpc` servers
+process calls in transmission order, so for the sync to have been received all
+preceding calls must have been received as well.
+
+Note that the logging test uses `socket.setNoDelay()` to turn off the Nagle algorithm
+on the client side.  With Nagle enbaled, only 25 sync calls get through per second, ie
+the throughput drops from 200k lines/sec to 25 * 250 = 6.25k lines/sec.
 
 
 Qrpc Server

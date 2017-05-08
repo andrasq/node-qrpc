@@ -10,7 +10,6 @@ if (process.argv[1] && process.argv[1].indexOf('nit') > 0) return
 
 assert = require('assert')
 cluster = require('cluster')
-aflow = require('aflow')
 qrpc = require('../index')
 json = { }
 //try { json = require('json-simple') } catch (err) { }
@@ -36,9 +35,10 @@ else {
 // Master is the server
 if (isMaster) {
     server = qrpc.createServer({
-        json_encode: json.encode || null,
-        json_decode: json.decode || null,
-    }, function onConnection(socket) {
+        // options
+    },
+    function onConnection(socket) {
+        // Nagle does not seem to be enabled on the server ("listen") end
         //socket.setNoDelay(true)
     })
     server.listen(1337, function() {
@@ -97,16 +97,14 @@ var data = [1, 2, 3, 4, 5]
 var data = {a:1, b:2, c:3, d:4, e:5}
 var buf = new Buffer(4000)
 var data1k = {}; for (var i=1; i<122; i++) data1k[i] = i;       // 1002 byte json string
-var logline = "200 byte logline string xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+var logline200 = "200 byte logline string xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+var logline2000 = new Array(10+1).join(logline200)
 
 // Workers are the clients
 if (isWorker) {
-console.log("AR: worker", cluster.worker.id);
     var client = qrpc.connect({
         port: 1337,
         host: 'localhost',
-        json_encode: json.encode || null,
-        json_decode: json.decode || null,
     },
     function whenConnected(socket) {
         // note: writing buffers to the socket trips the Nagle algorithm; turn it off
@@ -114,9 +112,12 @@ console.log("AR: worker", cluster.worker.id);
         // note: parallel calls are 30% faster with Nagle write combining, 45% for blobs,
         // but serial calls are 1000 x faster without!
         // but node-v6.7.0 is slower with setNoDelay than without
+        // on Skylake i7-6700k, parallel calls are 35% slower with NoDelay (50k in 425ms vs 315ms),
+        // but endpoint is 35% faster (100k in 27ms vs 37ms); series is not affected (20k in 670ms)
+        // The logging benchmark REQUIRES nodelay, else it is limited to 25.00 batches / sec
 
         console.log("echo data:", data, process.memoryUsage())
-        var n, t1, t2
+        var n, t1, t2, batchSize, line
 
         n = 50000; t1 = Date.now()
         testParallel(n, data, function(err, ret) {
@@ -139,37 +140,33 @@ console.log("AR: worker", cluster.worker.id);
         testRetrieve(client, n, buf.slice(0, 1000), function(e) {
             console.log("retrieved %d 1k Buffers in %d ms", n, Date.now() - t1)
 
-        n = 100000; t1 = Date.now()
-        testLogging(client, n, logline, function(e) {
-            t2 = Date.now()
-            console.log("logged %d 200B lines in %d ms", n, t2-t1)
-
             // note: encoding buffers is linear in buf.length
         n = 20000; t1 = Date.now()
         testBuffers(client, n, buf.slice(0, 1000), function(err, ret) {
             // already printed
-
-        n = 20000; t1 = Date.now()
-        testData1K(client, n, data1k, function(err, ret) {
-            var t2 = Date.now();
 
         n = 50000; t1 = Date.now()
         testWrapped(client, n, data, function(err, ret) {
             t2 = Date.now()
             console.log("wrapped parallel: %d calls in %d ms", n, t2 - t1)
 
-            client.call('quit')
-            client.close()
-            console.log("client done", process.memoryUsage())
-        })
-        })
-        })
-        })
-        })
-        })
-        })
-        })
-        })
+        n = 20000; t1 = Date.now()
+        testData1K(client, n, data1k, function(err, ret) {
+            var t2 = Date.now();
+
+        // logging is *much* faster with noDelay (32x faster: 250*25 = 6.25k lines/sec vs 200k lines/sec)
+        socket.setNoDelay()
+        n = 100000; line = logline200; batchSize = 250; t1 = Date.now()
+        testLogging(client, n, line, batchSize, function(e) {
+            t2 = Date.now()
+            console.log("logged %d %dB lines in %d ms syncing every %d lines", n, line.length, t2-t1, batchSize)
+
+        // Done.
+        client.call('quit')
+        client.close()
+        console.log("client done", process.memoryUsage())
+
+        }) }) }) }) }) }) }) }) })
     })
 
     function testParallel( n, data, cb ) {
@@ -228,38 +225,6 @@ console.log("AR: worker", cluster.worker.id);
         })
     }
 
-    function testLogging( client, n, data, cb ) {
-        var nsent = 0;
-        var batchSize = 10000
-        function uploadLoop() {
-            do {
-                for (i=0; i<10; i++) client.call('logline', data);
-                nsent += i;
-            } while (nsent % batchSize !== 0 && nsent < n)
-            client.call('syncLog', function(err, ret) {
-                if (nsent < n) setImmediate(uploadLoop);
-                else cb()
-            })
-        }
-        uploadLoop()
-    }
-
-    function testData1K( client, n, data, cb ) {
-        ndone = 0
-        var t1 = Date.now()
-        function handleEchoResponse(err, ret) {
-            if (++ndone === n) {
-                var t2 = Date.now()
-                console.log("parallel 1K object: %d calls in %d ms", n, t2 - t1)
-                assert.deepEqual(ret, data)
-                return cb()
-            }
-        }
-        for (i=0; i<n; i++) {
-            client.call('echo', data, handleEchoResponse)
-        }
-    }
-
     function testBuffers( client, n, data, cb ) {
         var i, itemCount = 0
         var t1 = Date.now()
@@ -305,6 +270,37 @@ console.log("AR: worker", cluster.worker.id);
                 }
             })
         }
+    }
+
+    function testData1K( client, n, data, cb ) {
+        ndone = 0
+        var t1 = Date.now()
+        function handleEchoResponse(err, ret) {
+            if (++ndone === n) {
+                var t2 = Date.now()
+                console.log("parallel 1K object: %d calls in %d ms", n, t2 - t1)
+                assert.deepEqual(ret, data)
+                return cb()
+            }
+        }
+        for (i=0; i<n; i++) {
+            client.call('echo', data, handleEchoResponse)
+        }
+    }
+
+    function testLogging( client, n, data, batchSize, cb ) {
+        var nsent = 0;
+        function uploadLoop() {
+            do {
+                for (i=0; i<10; i++) client.call('logline', data);
+                nsent += 10;
+            } while (nsent % batchSize !== 0 && nsent < n)
+            client.call('syncLog', function(err, ret) {
+                if (nsent < n) setImmediate(uploadLoop);
+                else cb()
+            })
+        }
+        uploadLoop()
     }
 }
 
