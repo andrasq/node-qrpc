@@ -77,7 +77,7 @@ module.exports ={
             for (var k in props) errorObject[k] = props[k]
             this.client.call('test', {a:3}, function(err, reply) {
                 t.assert(err instanceof Error)
-                t.deepEqual(Object.getOwnPropertyNames(errorObject), Object.getOwnPropertyNames(err));
+                t.deepEqual(Object.getOwnPropertyNames(errorObject).sort(), Object.getOwnPropertyNames(err).sort());
                 for (var i in props) t.equal(err[i], errorObject[i])
                 t.done()
             })
