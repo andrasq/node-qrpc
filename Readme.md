@@ -2,7 +2,7 @@ Qrpc
 ====
 
 [![Build Status](https://travis-ci.org/andrasq/node-qrpc.svg?branch=master)](https://travis-ci.org/andrasq/node-qrpc)
-[![Coverage Status](https://coveralls.io/repos/github/andrasq/node-qrpc/badge.svg?branch=master)](https://coveralls.io/github/andrasq/node-qrpc?branch=master)
+[![Coverage Status](https://codecov.io/github/andrasq/node-qrpc/coverage.svg?branch=master)](https://codecov.io/github/andrasq/node-qrpc?branch=master)
 
 Qrpc is a very fast remote procedure call package.
 

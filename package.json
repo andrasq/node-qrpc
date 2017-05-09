@@ -21,8 +21,7 @@
   "scripts": {
     "test": "qnit test",
     "coverage": "nyc --reporter text --reporter lcov qnit test*",
-    "clean": "rm -rf .nyc_output coverage/",
-    "coveralls": "nyc --reporter text-lcov npm test | coveralls"
+    "clean": "rm -rf .nyc_output coverage/"
   },
   "bugs": {
     "url": "https://github.com/andrasq/node-qrpc/issues"
