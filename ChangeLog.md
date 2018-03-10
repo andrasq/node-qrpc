@@ -1,3 +1,10 @@
+1.1.7
+- upgrade to latest mongoid-js@1.1.3 and qinvoke@0.11.3
+- test with more versions of node
+
+1.1.6
+- optimize response
+
 1.1.5
 - remove dead code (http_build_query et al) and related tests
 
