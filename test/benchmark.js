@@ -10,6 +10,7 @@ if (process.argv[1] && process.argv[1].indexOf('nit') > 0) return
 
 assert = require('assert')
 cluster = require('cluster')
+qibl = require('qibl');
 qrpc = require('../index')
 json = { }
 //try { json = require('json-simple') } catch (err) { }
@@ -95,7 +96,7 @@ if (isMaster) {
 var data = 1
 var data = [1, 2, 3, 4, 5]
 var data = {a:1, b:2, c:3, d:4, e:5}
-var buf = new Buffer(4000)
+var buf = qibl.allocBuf(4000)
 var data1k = {}; for (var i=1; i<122; i++) data1k[i] = i;       // 1002 byte json string
 var logline200 = "200 byte logline string xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
 var logline2000 = new Array(10+1).join(logline200)
