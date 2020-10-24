@@ -8,7 +8,7 @@
 // this script is not part of the unit tests
 if (process.argv[1] && process.argv[1].indexOf('nit') > 0) return
 
-VERSION = "v0.8.0";
+VERSION = "v0.8.1";
 
 getopt = require('qgetopt');
 options = getopt(process.argv, "j:h(-help)");
@@ -143,9 +143,17 @@ if (isWorker) {
         testParallel(n, data, function(err, ret) {
             // already printed timings
 
+        n = 50000; t1 = Date.now()
+        testParallelString(n, logline16, function(err, ret) {
+            // already printed timings
+
         n = 20000; t1 = Date.now()
         testSeries(client, n, data, function(err, ret) {
             console.log("series: %d calls in %d ms", n, Date.now() - t1)
+
+        n = 20000; t1 = Date.now()
+        testSeriesString(client, n, logline16, function(err, ret) {
+            console.log("series %d-byte string: %d calls in %d ms", logline16.length, n, Date.now() - t1)
 
         n = 100000; t1 = Date.now()
         testDeliver(client, n, data, function(e) {
@@ -186,7 +194,7 @@ if (isWorker) {
         client.close()
         console.log("client done", memoryUsage())
 
-        }) }) }) }) }) }) }) }) })
+        }) }) }) }) }) }) }) }) }) }) })
     })
 
     function testParallel( n, data, cb ) {
@@ -205,12 +213,42 @@ if (isWorker) {
         }
     }
 
+    function testParallelString( n, string, cb ) {
+        ndone = 0
+        var t1 = Date.now()
+        function handleEchoResponse(err, ret) {
+            if (++ndone === n) {
+                var t2 = Date.now()
+                console.log("parallel %d-byte string: %d calls in %d ms", string.length, n, t2 - t1)
+                assert.deepEqual(ret, string)
+                return cb()
+            }
+        }
+        for (i=0; i<n; i++) {
+            client.call('echo', string, handleEchoResponse)
+        }
+    }
+
     function testSeries( client, n, data, cb ) {
         (function makeCall() {
             client.call('echo', data, function(err, ret) {
                 if (err) throw err
                 if (--n <= 0) {
                     assert.deepEqual(ret, data)
+                    return cb();
+                }
+                else if (n % 40 === 0) setImmediate(makeCall)
+                else makeCall()
+            })
+        })()
+    }
+
+    function testSeriesString( client, n, string, cb ) {
+        (function makeCall() {
+            client.call('echo', string, function(err, ret) {
+                if (err) throw err
+                if (--n <= 0) {
+                    assert.deepEqual(ret, string)
                     return cb();
                 }
                 else if (n % 40 === 0) setImmediate(makeCall)
