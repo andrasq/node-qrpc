@@ -412,7 +412,9 @@ Todo
 
 - more unit tests
 - server should periodically yield to the event loop
-- support call timeouts for more convenient error detection and cleanup
+- support call timeouts for more convenient error detection and cleanup (client-side and server-side both)
+  Make server track running calls with timestamp, set done calls = undefined, periodically copy over object to gc properties,
+  only the "olds" object could have timed-out calls.
 - think about how to gc or time out callbacks that have been abandoned by the server (call not closed)
 - maybe make the the client and server pipable event emitters
 - provide a `client.send()` method to send to an endpoint without a callback
@@ -424,3 +426,5 @@ Todo
   to check whether datagrams got there ok
 - Use Cases readme section to discuss rpc, send datagrams to server (addHandlerNoResponse),
   data retrieval (multiple replies from server)
+- support `qrpc.*` out-of-band calls for client-server metadata, setup/config/etc
+- support request cancellation (`qrpc.cancel(id)` call, processed asap out-of-band)
