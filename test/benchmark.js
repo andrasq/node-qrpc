@@ -49,6 +49,8 @@ else {
 if (isMaster) {
     server = qrpc.createServer({
         // options
+        //json_encode: json.encode,
+        //json_decode: json.decode,
     },
     function onConnection(socket) {
         // Nagle does not seem to be enabled on the server ("listen") end
@@ -113,6 +115,7 @@ if (isMaster) {
 
 var data = 1
 var data = [1, 2, 3, 4, 5]
+var data = { a: "ABC", b: 1, c: "DEFGHI\xff", d: 12345.67e-1, e: null } // canonical qbson test payload
 var data = {a:1, b:2, c:3, d:4, e:5}
 var buf = qibl.allocBuf(4000)
 var data1k = {}; for (var i=1; i<122; i++) data1k[i] = i;       // 1002 byte json string
