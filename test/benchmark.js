@@ -26,8 +26,8 @@ assert = require('assert')
 cluster = require('cluster')
 qibl = require('qibl');
 qrpc = require('../index')
-json = { }
-//try { json = require('json-simple') } catch (err) { }
+json = { encode: JSON.stringify, decode: JSON.parse }
+try { json = require('json-simple') } catch (err) { }
 
 setImmediate = global.setImmediate || process.nextTick
 
@@ -55,10 +55,10 @@ if (isMaster) {
         //socket.setNoDelay(true)
     })
     server.listen(1337, function() {
-        console.log("rpc: listening on 1337", process.memoryUsage())
+        console.log("rpc: listening on 1337", memoryUsage())
     })
     server.addHandler('quit', function(req, res, next) {
-        console.log("server quit", process.memoryUsage())
+        console.log("server quit", memoryUsage())
         res.end()
         server.close()
     })
@@ -118,6 +118,7 @@ var buf = qibl.allocBuf(4000)
 var data1k = {}; for (var i=1; i<122; i++) data1k[i] = i;       // 1002 byte json string
 var logline200 = "200 byte logline string xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
 var logline2000 = new Array(10+1).join(logline200)
+var logline16 = "xxxxxxxxxxxxxxx\n"
 
 // Workers are the clients
 if (isWorker) {
@@ -135,7 +136,7 @@ if (isWorker) {
         // but endpoint is 35% faster (100k in 27ms vs 37ms); series is not affected (20k in 670ms)
         // The logging benchmark REQUIRES nodelay, else it is limited to 25.00 batches / sec
 
-        console.log("echo data:", data, process.memoryUsage())
+        console.log("echo data:", data, memoryUsage())
         var n, t1, t2, batchSize, line
 
         n = 50000; t1 = Date.now()
@@ -183,7 +184,7 @@ if (isWorker) {
         // Done.
         client.call('quit')
         client.close()
-        console.log("client done", process.memoryUsage())
+        console.log("client done", memoryUsage())
 
         }) }) }) }) }) }) }) }) })
     })
@@ -323,6 +324,10 @@ if (isWorker) {
     }
 }
 
+function memoryUsage() {
+    return JSON.stringify(process.memoryUsage());
+}
+
 // 36k calls / sec parallel single process, 16.7k/s series
 // 65k calls / sec parallel two processes, 18k/s series (73k/s single int arg parallel, 20k/s series)
 // server burst peak is about 300k calls / sec (single client, in parallel, w/o req time, tiny response, meas 100k)
@@ -331,3 +336,5 @@ if (isWorker) {
 // reply-less localhost calls are 23% faster (addEndpoint vs addHandler), and much faster on the server side
 // (1e6 deliveries / sec vs 120k calls / s, not including caller-side data prep and formatting)
 // (2e6 deliveries / sec from 2 client processes)
+
+// R7 3800X @4475 mhz peaks around 265k parallel calls / sec (x3+)
