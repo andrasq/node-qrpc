@@ -1,12 +1,26 @@
 /**
  * quick little rpc package
  *
- * Copyright (C) 2015-2017 Andras Radics
+ * Copyright (C) 2015-2020 Andras Radics
  * Licensed under the Apache License, Version 2.0
  */
 
 // this script is not part of the unit tests
 if (process.argv[1] && process.argv[1].indexOf('nit') > 0) return
+
+VERSION = "v0.8.0";
+
+getopt = require('qgetopt');
+options = getopt(process.argv, "j:h(-help)");
+if (options.h || options.help) {
+    console.log("benchmark.js " + VERSION + " -- run the qrpc benchmarks");
+    console.log("usage: node test/benchmark.js [optios]");
+    console.log("");
+    console.log("options:");
+    console.log(" -j N   use N threads to serve requests");
+    return;
+}
+var jobsCount = options.j || options.jobs || 1;
 
 assert = require('assert')
 cluster = require('cluster')
@@ -26,9 +40,7 @@ else {
     isMaster = cluster.isMaster
     isWorker = cluster.isWorker
     if (isMaster) {
-        cluster.fork()
-//        cluster.fork()
-//        cluster.fork()
+        for (var j=0; j<jobsCount; j++) cluster.fork();
         cluster.disconnect()
     }
 }
@@ -54,12 +66,18 @@ if (isMaster) {
         res.end(null)
     })
     server.addHandler('echo', function(req, res, next) {
-        var data = req.m
-        if (Array.isArray(data)) {
-            for (var i=0; i<data.length; i++) res.write(data[i])
-            res.end()
+        var n = 0;
+        //setTimeout(response, (n = (n + 1) % 100));
+        //setImmediate(response);
+        response();
+        function response() {
+            var data = req.m
+            if (Array.isArray(data)) {
+                for (var i=0; i<data.length; i++) res.write(data[i])
+                res.end()
+            }
+            else res.end(data)
         }
-        else res.end(data)
     })
     server.addHandler('echo10k', function(req, res, next) {
         var i, data = req.m
