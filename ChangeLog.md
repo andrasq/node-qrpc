@@ -1,3 +1,10 @@
+1.2.0
+- switch to using qibl for invoke, varargs and makeGetId.  The internal id format is still
+  monotonically increasing but is now shorter and with a finer time resolution.
+
+1.1.8
+- avoid Buffer deprecation warnings
+
 1.1.7
 - upgrade to latest mongoid-js@1.1.3 and qinvoke@0.11.3
 - test with more versions of node

@@ -1,7 +1,7 @@
 /**
  * quick little rpc package
  *
- * Copyright (C) 2015-2017 Andras Radics
+ * Copyright (C) 2015-2017,2022 Andras Radics
  * Licensed under the Apache License, Version 2.0
  */
 
@@ -50,7 +50,7 @@ module.exports ={
             this.client.call('test', {a:1, b:2})
             t.equal(socket._written[0].slice(-1), "\n")
             var msg = JSON.parse(socket._written[0])
-            t.assert(msg.id.match(/[0-9a-fA-F]{24}/))
+            t.assert(msg.id.match(/[0-9a-z]{13}/))
             delete msg.id
             t.deepEqual(msg, {v: 1, n: 'test', m: {a:1, b:2}})
             t.equal(msg.v, 1)
@@ -74,7 +74,7 @@ module.exports ={
             this.client.setTarget(socket, socket)
             var errorObject = new Error("oops")
 
-            // node v0.8 and v0.10 have two undefined error properties set: `arguments` and `type`
+            // node v0.8 and v0.10 errors have two undefined own properties set: `arguments` and `type`
             // JSON.stringify can not pass undefined values, so we do not receive them.
             // Delete them to make this test pass under node-v0.10.42
             var errorObjectProperties = Object.getOwnPropertyNames(errorObject);
